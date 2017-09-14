@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="shortcut icon" href="../static/favicon.ico">
+		
+		<title>AK Capital - Dashboard</title>
+		<meta name="author" content="gyurisc">
+		<link rel="stylesheet" type="text/css" href="../static/css/jquery.gridster.css">
+		<link rel="stylesheet" type="text/css" href="../static/css/slick.grid.css"/>
+		<link rel="stylesheet" type="text/css" href="../static/css/slick-default-theme.css"/>
+        <link href="https://fonts.googleapis.com/css?family=Pacifico" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css?family=Quicksand:300,400,500,700" rel="stylesheet">
+		<link rel="stylesheet" href="../static/css/smoothness/jquery-ui-1.11.3.custom.css" type="text/css"/>
+		<link rel="stylesheet" href="https://cdn.rawgit.com/schme16/Chart.js-RangeSlider/2c535a577c5f475bc34d9020d46622f1bd33daa9/dist/RangeSlider-all.min.css" type="text/css"/>
+		<link rel="stylesheet" type="text/css" href="../static/css/styles.css">
+
+		<script type="text/javascript" src="../static/jquery.js"></script>
+	</head>
+	<body>
+	<script>
+		jQuery(window).load(function(){
+			jQuery(".loadscreen").fadeOut(500);
+		});
+	</script>
+	<div class="loadscreen">
+		<div class="sk-cube-grid">
+			<div class="sk-cube sk-cube1"></div>
+			<div class="sk-cube sk-cube2"></div>
+			<div class="sk-cube sk-cube3"></div>
+			<div class="sk-cube sk-cube4"></div>
+			<div class="sk-cube sk-cube5"></div>
+			<div class="sk-cube sk-cube6"></div>
+			<div class="sk-cube sk-cube7"></div>
+			<div class="sk-cube sk-cube8"></div>
+			<div class="sk-cube sk-cube9"></div>
+		</div>
+		<img src="../static/logo.png">
+	</div>
+	<p style="color: darkred;font-size: 12px;">ALPHA</p>
+    <div class="row">
+		<h1 class="page-header" id="nametag">{{ header }}</h1>
+        <img src="../static/logo.png" style="height:100px;width:auto;">
+    </div>
+		<section class="demo">
+			<div class="gridster">
+				<ul id="widgetpicker" class="widgetpicker">
+					<li data-row="1" data-col="1" data-sizex="1" data-sizey="1"><subtitle>Headlines</subtitle></li>			
+					<li data-row="1" data-col="1" data-sizex="1" data-sizey="1"><subtitle>Tracking</subtitle></li>
+					<li data-row="1" data-col="1" data-sizex="1" data-sizey="1"><subtitle>Detail</subtitle></li>
+					<li data-row="1" data-col="1" data-sizex="1" data-sizey="1"><subtitle>Position</subtitle>
+				</ul>
+				<hr style="border-top: dashed 5px;"/>
+				<ul id="maingrid">
+					<li data-row="1" data-col="1" data-sizex="2" data-sizey="3"><div class="draggable">
+																					<subtitle>Headlines</subtitle>
+																					<div class="clear-menu-btn">
+																						<input type="checkbox">
+																						<span class="top"></span>
+																						<span class="middle"></span>
+																						<span class="bottom"></span>
+																						<span class="circle"></span>
+																					</div><hr style="margin-bottom: 0px;">
+																				</div>
+																				<div class="grid" id="headlineGrid" style="height:571px;width:auto;"></div>
+                                                                                </li>
+					<li data-row="1" data-col="1" data-sizex="2" data-sizey="3"><div class="draggable">
+																					<subtitle>Detail</subtitle>
+																					<div class="clear-menu-btn">
+																						<input type="checkbox">
+																						<span class="top"></span>
+																						<span class="middle"></span>
+																						<span class="bottom"></span>
+																						<span class="circle"></span>
+																					</div><hr style="margin-bottom: 0px;">
+																				</div>
+																				<div class="detail">
+																					<div id="title"></div>
+																					<div id="ref_img"></div>
+																					<div id="desc"></div>
+																					<div id="tags"></div>
+																					<div id="tag_desc"></div>
+
+																				</div>
+																				</li>
+					<li data-row="1" data-col="1" data-sizex="3" data-sizey="2"><div class="draggable">
+																					<subtitle>Tracking</subtitle>
+																					<div class="clear-menu-btn">
+																						<input type="checkbox">
+																						<span class="top"></span>
+																						<span class="middle"></span>
+																						<span class="bottom"></span>
+																						<span class="circle"></span>
+																					</div><hr style="margin-bottom: 0px;">
+																				</div>
+																				<canvas id="myChart" height="330" width="600"></canvas>
+																				</li>
+					
+					<li data-row="1" data-col="1" data-sizex="3" data-sizey="1"><div class="draggable">
+																					<subtitle>Position</subtitle>
+																					<div class="clear-menu-btn">
+																						<input type="checkbox" onclick="removeWidget()">
+																						<span class="top"></span>
+																						<span class="middle"></span>
+																						<span class="bottom"></span>
+																						<span class="circle"></span>
+																					</div><hr style="margin-bottom: 0px;">
+																				</div>
+																				</li>
+				</ul>
+			</div>
+		</section>
+
+		
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.6.0/Chart.js"></script>
+		<script src="https://gitcdn.link/cdn/schme16/Chart.js-RangeSlider/2dc49a0980ca04ca2690bc5f1c9e3644e4207b5a/dist/RangeSlider-all.min.js"></script>
+		<script src="../static/lib/firebugx.js"></script>
+		<script src="../static/lib/jquery-1.11.2.min.js"></script>
+		<script src="../static/lib/jquery-ui-1.11.3.min.js"></script>
+		<script src="../static/lib/jquery.event.drag-2.2.js"></script>
+		<script type="text/javascript" src="../static/slick.core.js"></script>
+		<script src="../static/plugins/slick.cellrangedecorator.js"></script>
+		<script src="../static/plugins/slick.cellrangeselector.js"></script>
+		<script src="../static/plugins/slick.cellselectionmodel.js"></script>
+		<script type="text/javascript" src="../static/slick.dataview.js"></script>
+		<script type="text/javascript" src="../static/slick.editors.js"></script>
+		<script type="text/javascript" src="../static/slick.formatters.js"></script>
+		<script type="text/javascript" src="../static/slick.grid.js"></script>
+		<script type="text/javascript" src="../static/jquery.gridster.js" charster="utf-8"></script>
+
+
+		<script type="text/javascript">
+			var gridster;
+
+			$(function() {
+				gridtster = $(".gridster > ul").gridster({
+					widget_margins: [5, 5], 
+					widget_base_dimensions: [200, 200],
+					draggable: {
+						handle: '.draggable'
+					},
+					min_cols: 6,
+                    width: "auto"
+				}).data('gridster');
+			});
+
+		</script>
+		<script>
+			var grid;
+			var indexNumber;
+			var columns = [
+				{id: "source", name: "Source", field: "source", width: 60, editor: Slick.Editors.Text, sortable:true},
+				//{id: "publishedAt", name: "Published", field: "publishedAt", width: 50, editor: Slick.Editors.Text, sortable:true},
+				{id: "updatedShort", name: "Updated", field: "updatedShort", width: 50, editor: Slick.Editors.Text, sortable:true},
+				{id: "title", name: "Headline", field: "title", width: 200, editor: Slick.Editors.Text, sortable:true},
+				
+			];
+			var options = {
+				editable: true,
+				enableCellNavigation: true,
+				multiColumnSort: true,
+				resizable: true,
+				asyncEditorLoading: false,
+    			autoEdit: false
+			};
+			
+			$.ajax({
+				type: "GET",
+				url: 'json/headlines',
+				dataType: 'json',
+				success: function (data) {
+					grid = new Slick.Grid("#headlineGrid", data, columns, options);
+					grid.autosizeColumns()
+					grid.setSelectionModel(new Slick.CellSelectionModel());
+					console.log(data)
+					grid.onClick.subscribe(cellClicked);
+					grid.onSort.subscribe(function (e, args) {
+					var cols = args.sortCols;
+					data.sort(function (dataRow1, dataRow2) {
+						for (var i = 0, l = cols.length; i < l; i++) {
+							var field = cols[i].sortCol.field;
+							var sign = cols[i].sortAsc ? 1 : -1;
+							var value1 = dataRow1[field], value2 = dataRow2[field];
+							var result = (value1 == value2 ? 0 : (value1 > value2 ? 1 : -1)) * sign;
+							if (result != 0) {
+								return result;
+							}
+						}
+						return 0;
+					});
+					grid.invalidate();
+					grid.render();
+					});
+				}
+			});
+
+			
+			function companyClicked(e, args) {
+				stockSymbol = 'FB'//args.row;
+				$.ajax({
+					type: "GET",
+					url: 'json/stock/get_intraday/' + stockSymbol,
+					dataType: 'json',
+					success: function (data) {
+						var ctx = document.getElementById("myChart").getContext('2d');
+						var labels = [];
+						for (var i = 0, l = Object.keys(data).length; i < l; i++) {
+							var label = Object.keys(data)[i].split(' ')[1];
+							labels.push(label.substring(0, label.length - 3));
+						}
+						var myChart = new RangeSliderChart({
+							chartCTX: ctx,
+							type: 'line',
+							class: 'my-chart-ranger', //Specifies a custom class you want applied to your sliders
+							initial: [Object.keys(data).length - (Object.keys(data).length / 4), Object.keys(data).length],
+							chartData: {
+								labels: labels,
+								datasets: [{
+									data: Object.values(data),
+									}],
+
+							},
+							chartOpts: {
+								legend: {
+									display: false
+								},
+								tooltips: {
+									callbacks: {
+										label: function(tooltipItem) {
+											return tooltipItem.yLabel;
+											//to display the custom news point on it put it here
+										}
+									}
+								},
+								scales: {
+									xAxes: [{
+										ticks: {
+											maxRotation: 0,
+											minRotation: 0
+										},
+										//display: false
+
+									}],
+									yAxes: [{
+										ticks: {
+											maxRotation: 0,
+											minRotation: 0
+										}
+									}],
+									}
+							}
+						});
+
+					}
+				});
+			};
+
+			function cellClicked(e, args) {
+				indexNumber = args.row;
+				$.ajax({
+					type: "GET",
+					url: 'json/detail/' + indexNumber,
+					dataType: 'json',
+					success: function (data) {
+						$("#title").html("");
+						$("#ref_img").html("");
+						$("#desc").html("");
+						$("#focus").html(""); // Put this here because it takes too long in the analysis bit
+						$("#title").html("<a href=" + data['url'] + " target='_blank'><u><h3>" + data['title'] + "<u/><h3/></a>");
+						$("#ref_img").html("<img src=" + data['urlToImage'] + ">");
+						$("#desc").html("<p>" + data['description'] + "</p><hr>");
+						
+					}
+				});
+				$.ajax({
+					type: "GET",
+					url: 'json/detail/analysis/' + indexNumber,
+					dataType: 'json',
+					success: function(data) {
+						var tags = data['tags'].split(',')
+						var output = '';
+						for (var i = 0, l = tags.length - 1; i < l; i++) {
+							output += "<div class='tag'><p>" + tags[i] + "</p></div>";
+						}
+						$("#tags").html(output);
+					}
+				});
+			};
+
+			$('.menu').click (function(){
+				$(this).toggleClass('open');
+			});
+
+			
+		</script>
+	</body>
+</html>
