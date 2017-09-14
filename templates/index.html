@@ -202,18 +202,18 @@
 					dataType: 'json',
 					success: function (data) {
 						var ctx = document.getElementById("myChart").getContext('2d');
-						var labels = [];
-						for (var i = 0, l = Object.keys(data).length; i < l; i++) {
-							var label = Object.keys(data)[i].split(' ')[1];
-							labels.push(label.substring(0, label.length - 3));
-						}
+						//var labels = [];
+						//for (var i = 0, l = Object.keys(data).length; i < l; i++) {
+						//	var label = Object.keys(data)[i].split(' ')[1];
+						//	labels.push(label.substring(0, label.length - 3));
+						//}
 						var myChart = new RangeSliderChart({
 							chartCTX: ctx,
 							type: 'line',
 							class: 'my-chart-ranger', //Specifies a custom class you want applied to your sliders
-							initial: [Object.keys(data).length - (Object.keys(data).length / 4), Object.keys(data).length],
+							initial: [Object.keys(data).length - (Object.keys(data).length * 0.75), Object.keys(data).length - (Object.keys(data).length / 4)],
 							chartData: {
-								labels: labels,
+								labels: Object.keys(data),
 								datasets: [{
 									data: Object.values(data),
 									}],
@@ -237,7 +237,7 @@
 											maxRotation: 0,
 											minRotation: 0
 										},
-										//display: false
+										display: false
 
 									}],
 									yAxes: [{

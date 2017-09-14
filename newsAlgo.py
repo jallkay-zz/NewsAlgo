@@ -206,7 +206,8 @@ def stock(type, symbol):
         return jsonify(ts.get_daily(symbol))
     if type == 'get_intraday':
         output = {}
-        core = ts.get_intraday(symbol)
+        #TODO change this back 
+        core = ts.get_daily(symbol)
         for name, value in core[0].iteritems():
             
             output[name] = value["1. open"]

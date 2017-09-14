@@ -166,7 +166,7 @@ hr {
 }
 
 .noUi-connect {
-    background: black;
+    background: darkgray;
 }
 
 .noUi-horizontal .noUi-handle {
@@ -187,17 +187,34 @@ hr {
 }
 
 .noUi-background {
-    background: darkgrey;
+    background: dimgray;
     box-shadow: none;
+    transition: background 450ms;
 }
+
 .noUi-origin {
   border-radius: 0px;
 }
 
 .range-slider {
     height: 20px;
+    width: 100%!important;
 }
 
+.noUi-base {
+  transition: background 450ms;
+}
+
+.range-slider:hover .noUi-background {
+    background: black;
+}
+.range-slider:hover .noUi-base {
+  background: black;
+}
+
+.range-slider:hover .noUi-connect {
+    background: white;
+}
 .noUi-target {
     border-radius: 0px;
     border: 1px solid lightslategray;
