@@ -195,7 +195,7 @@
 
 			
 			function companyClicked(e, args) {
-				stockSymbol = 'FB'//args.row;
+				stockSymbol = e;
 				$.ajax({
 					type: "GET",
 					url: 'json/stock/get_intraday/' + stockSymbol,
@@ -207,7 +207,7 @@
 						//	var label = Object.keys(data)[i].split(' ')[1];
 						//	labels.push(label.substring(0, label.length - 3));
 						//}
-						var myChart = new RangeSliderChart({
+						window.myChart = new RangeSliderChart({
 							chartCTX: ctx,
 							type: 'line',
 							class: 'my-chart-ranger', //Specifies a custom class you want applied to your sliders
@@ -278,13 +278,40 @@
 					success: function(data) {
 						var tags = data['tags'].split(',')
 						var output = '';
+						var descOutput = [];
 						for (var i = 0, l = tags.length - 1; i < l; i++) {
-							output += "<div class='tag'><p>" + tags[i] + "</p></div>";
+							output += '<button class="tag_' + i + '" onclick=tagClicked(".d_tag_' + i + '-' + data['tag_' + i ]['stockSymbol'] + '")><p>' + tags[i] + '</p></button>';
+							descOutput += "<div class='d_tag_" + i + "'><p>" + data['tag_' + i]['desc'] + "</p></div>";
 						}
 						$("#tags").html(output);
+						$("#tag_desc").html(descOutput);
+						
+
+						for (var i = 0, l = tags.length - 1; i < l; i++) {
+							$(".d_tag_" + i).hide();
+						}
+
+						if (window.myChart.chart) {
+							window.myChart.chart.destroy();
+							window.myChart.sliderElement.remove();
+						}
+
+						
 					}
 				});
 			};
+
+			function tagClicked(tag) {
+				if (window.myChart.chart) {
+					window.myChart.chart.destroy();
+					window.myChart.sliderElement.remove();
+				}
+				
+				$(tag.split('-')[0]).toggle();
+				if (tag.split('-')[1] != 'null') {
+					companyClicked(tag.split('-')[1]);
+				}
+			}
 
 			$('.menu').click (function(){
 				$(this).toggleClass('open');

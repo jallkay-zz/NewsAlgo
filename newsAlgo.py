@@ -5,6 +5,7 @@ import urllib, json
 import threading
 from alpha_vantage.timeseries import TimeSeries
 import nltk
+import ast
 from numpy import isnan
 import wikipedia as wiki
 from collections import OrderedDict
@@ -24,6 +25,15 @@ ts = TimeSeries(key='YWBHDJPSFY0S9FHO')
 redirects = {}
 redirects['apple'] = 'Apple Inc.'
 redirects['trumps'] = 'trump'
+
+stockSymbols = {}
+stockSymbols['Facebook Inc.'] = 'FB'
+stockSymbols['Microsoft'] = 'MSFT'
+stockSymbols['Cadillac'] = 'GM'
+stockSymbols['Boeing Co.'] = 'BA'
+
+overrideData = True
+
 
 splits = [('.s', 'D'), ("'s", 'D'), ('Inc', 'K')]
 
@@ -60,6 +70,8 @@ def getNews():
     rawData = []
     alreadyThere = False
     count = 0
+
+
     for source in newsSources:
         newsUrl     = ('http://newsapi.org/v1/articles?source=%s&sortBy=top&apiKey=' % source) + newsApiKey
         response    = urllib.urlopen(newsUrl)
@@ -77,17 +89,9 @@ def getNews():
                             alreadyThere = True
                             break
                     if not alreadyThere:
-                        analysis = convert(getAnalysis(article))
-                        article['tags'] = ''.join(str(a) + ',' for a in analysis.keys())
-                        for item in analysis.values():
-                            article['tag_' +  str(([i for i,x in enumerate(analysis.values()) if x == item])[0])] = item
-                        rawData.append(article)
+                        rawData.append(composeTag(article))
                 else:
-                    analysis = convert(getAnalysis(article))
-                    article['tags'] = ''.join(str(a) + ',' for a in analysis.keys())
-                    for item in analysis.values():
-                        article['tag_' +  str(([i for i,x in enumerate(analysis.values()) if x == item])[0])] = item
-                    rawData.append(article)
+                    rawData.append(composeTag(article))
 
     for i in range(len(rawData)):
         for name, value in rawData[i].iteritems():
@@ -106,6 +110,18 @@ def getNews():
     threading.Timer(600, getNews).start()
 
     return mainDF
+
+def composeTag(article):
+    analysis = convert(getAnalysis(article))
+    article['tags'] = ''.join(str(a) + ',' for a in analysis.keys())
+    for name, desc in analysis.iteritems():
+        tagDict = {}
+        tagDict['desc'] = desc
+        tagDict['name'] = name
+        tagDict['stockSymbol'] = stockSymbols.get(name)
+        tagDict['type'] = 'Other'
+        article['tag_' +  str(([i for i,x in enumerate(analysis.keys()) if x == name])[0])] = tagDict
+    return article
 
 
 def callWiki(currentWord, wikiReturn):
@@ -126,6 +142,10 @@ def callWiki(currentWord, wikiReturn):
 def getDict(item):
     itemDict = {}
     for name, value in zip(mainDF.columns, item):
+        if 'tag_' in name:
+
+            value = ast.literal_eval(value) if type(value) == str else value
+
         if type(value) == float:
             value = "" if isnan(value) else value
         itemDict[name] = value
@@ -217,6 +237,18 @@ def stock(type, symbol):
 @app.route('/dashboard')
 def index():
     return render_template('index.html', header="")
+
+# ONLY USE WHEN YOURE OVERRITING THE CSV
+#@app.route('/json/all')
+#def getAllData():
+#    mainDict = []
+#    for rawItem in mainDF.values:
+#        item = getDict(rawItem)
+#        mainDict.append(composeTag(item))
+#    
+#    frame = pandas.DataFrame.from_dict(mainDict)
+#    frame.to_csv('data.csv')
+#    return jsonify(mainDict)
     
 
 if __name__ == "__main__":
