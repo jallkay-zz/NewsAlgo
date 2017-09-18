@@ -37,6 +37,14 @@ overrideData = True
 
 splits = [('.s', 'D'), ("'s", 'D'), ('Inc', 'K')]
 
+def getStockSymbol(companyName):
+    for name in stockSymbols.values:
+        if companyName.lower() in name[1].lower():
+            return name[0]
+
+
+
+
 
 def convert(input):
     if isinstance(input, dict):
@@ -223,11 +231,11 @@ def detailAnalysis(mainID):
 def stock(type, symbol):
     if type == 'get_daily':
         # if the amount of articles on the subject goes back, do the full one 
-        return jsonify(ts.get_daily(symbol))
+        return jsonify(ts.get_daily(getStockSymbol(symbol)))
     if type == 'get_intraday':
         output = {}
         #TODO change this back 
-        core = ts.get_daily(symbol)
+        core = ts.get_intraday(getStockSymbol(symbol))
         for name, value in core[0].iteritems():
             
             output[name] = value["1. open"]
@@ -252,7 +260,8 @@ def index():
     
 
 if __name__ == "__main__":
-    mainDF = getNews()
+    mainDF       = getNews()
+    stockSymbols = pandas.DataFrame.from_csv('fullStockSymbols.csv')
     app.run(host='0.0.0.0')
 
 

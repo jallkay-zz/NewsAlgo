@@ -280,7 +280,7 @@
 						var output = '';
 						var descOutput = [];
 						for (var i = 0, l = tags.length - 1; i < l; i++) {
-							output += '<button class="tag_' + i + '" onclick=tagClicked(".d_tag_' + i + '-' + data['tag_' + i ]['stockSymbol'] + '")><p>' + tags[i] + '</p></button>';
+							output += '<button class="focus" class="tag_' + i + '" onclick=tagClicked(".d_tag_' + i + '-' + data['tag_' + i ]['stockSymbol'] + '")><p>' + tags[i] + '</p></button>';
 							descOutput += "<div class='d_tag_" + i + "'><p>" + data['tag_' + i]['desc'] + "</p></div>";
 						}
 						$("#tags").html(output);
