@@ -126,7 +126,7 @@ def composeTag(article):
         tagDict = {}
         tagDict['desc'] = desc
         tagDict['name'] = name
-        tagDict['stockSymbol'] = stockSymbols.get(name)
+        tagDict['stockSymbol'] = getStockSymbol(name)
         tagDict['type'] = 'Other'
         article['tag_' +  str(([i for i,x in enumerate(analysis.keys()) if x == name])[0])] = tagDict
     return article
@@ -151,9 +151,11 @@ def getDict(item):
     itemDict = {}
     for name, value in zip(mainDF.columns, item):
         if 'tag_' in name:
-
-            value = ast.literal_eval(value) if type(value) == str else value
-
+            try:
+                value = ast.literal_eval(value) if type(value) == str else value
+            except Exception:
+                print Exception
+                continue
         if type(value) == float:
             value = "" if isnan(value) else value
         itemDict[name] = value
@@ -231,11 +233,11 @@ def detailAnalysis(mainID):
 def stock(type, symbol):
     if type == 'get_daily':
         # if the amount of articles on the subject goes back, do the full one 
-        return jsonify(ts.get_daily(getStockSymbol(symbol)))
+        return jsonify(ts.get_daily(symbol))
     if type == 'get_intraday':
         output = {}
         #TODO change this back 
-        core = ts.get_intraday(getStockSymbol(symbol))
+        core = ts.get_intraday(symbol)
         for name, value in core[0].iteritems():
             
             output[name] = value["1. open"]
@@ -250,7 +252,10 @@ def index():
 #@app.route('/json/all')
 #def getAllData():
 #    mainDict = []
+#    progress = 0
 #    for rawItem in mainDF.values:
+#        progress = progress + 1
+#        print 'progress: ' + str(progress)
 #        item = getDict(rawItem)
 #        mainDict.append(composeTag(item))
 #    
