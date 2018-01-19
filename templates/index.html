@@ -84,6 +84,7 @@
 																				</li>
 					<li data-row="1" data-col="1" data-sizex="3" data-sizey="2"><div class="draggable">
 																					<subtitle>Tracking</subtitle>
+																					<div class="ticker-focus"></div>
 																					<div class="clear-menu-btn">
 																						<input type="checkbox">
 																						<span class="top"></span>
@@ -196,6 +197,7 @@
 			
 			function companyClicked(e, args) {
 				stockSymbol = e;
+				$('.ticker-focus')[0].innerHTML = stockSymbol;
 				$.ajax({
 					type: "GET",
 					url: 'json/stock/get_intraday/' + stockSymbol,
@@ -211,7 +213,7 @@
 							chartCTX: ctx,
 							type: 'line',
 							class: 'my-chart-ranger', //Specifies a custom class you want applied to your sliders
-							initial: [Object.keys(data).length - (Object.keys(data).length * 0.75), Object.keys(data).length - (Object.keys(data).length / 4)],
+							initial: [Object.keys(data).length - (Object.keys(data).length * 0.75), Object.keys(data).length],
 							chartData: {
 								labels: Object.keys(data),
 								datasets: [{
@@ -280,9 +282,15 @@
 						var output = '';
 						var descOutput = [];
 						for (var i = 0, l = tags.length - 1; i < l; i++) {
-							output += '<button class="focus" class="tag_' + i + '" onclick=tagClicked(".d_tag_' + i + '-' + data['tag_' + i ]['stockSymbol'] + '")><p>' + tags[i] + '</p></button>';
+							if(data['tag_' + i ]['stockSymbol']) {
+								output += '<button class="focus" style="background-color:red;" class="tag_' + i + '" onclick=tagClicked(".d_tag_' + i + '-' + data['tag_' + i ]['stockSymbol'] + '")><p>' + tags[i] + '</p></button>';
+							}
+							else {
+								output += '<button class="focus" class="tag_' + i + '" onclick=tagClicked(".d_tag_' + i + '-' + data['tag_' + i ]['stockSymbol'] + '")><p>' + tags[i] + '</p></button>';
+							}
 							descOutput += "<div class='d_tag_" + i + "'><p>" + data['tag_' + i]['desc'] + "</p></div>";
 						}
+						
 						$("#tags").html(output);
 						$("#tag_desc").html(descOutput);
 						
@@ -294,6 +302,7 @@
 						if (window.myChart.chart) {
 							window.myChart.chart.destroy();
 							window.myChart.sliderElement.remove();
+							$('.ticker-focus')[0].innerHTML = "";
 						}
 
 						
@@ -307,7 +316,10 @@
 					window.myChart.sliderElement.remove();
 				}
 				
-				$(tag.split('-')[0]).toggle();
+				for (var i = 0; i < $('#tag_desc').children.length; i++) {
+					$('d_tag_' + i).css({"display" : "none"});
+				}
+				$(tag.split('-')[0]).css({"display" : "block"});
 				if (tag.split('-')[1] != 'null') {
 					companyClicked(tag.split('-')[1]);
 				}

@@ -212,6 +212,32 @@ hr {
   background: black;
 }
 
+#tag_desc {
+  font-size: 13px;
+  color: white;
+  width: 90%;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+button {
+  background-color: darkgray;
+  border-radius: 5px;
+  border: 0;
+  margin: 3px;
+  padding: 5px;
+  height: 25px;
+}
+.focus p {
+  padding: 0px;
+  margin: 0px;
+}
+button:hover {
+  background-color: white;
+  transition: background-color 0.5s ease-in-out;
+}
+
 .range-slider:hover .noUi-connect {
     background: white;
 }
@@ -248,6 +274,15 @@ hr {
   width: 25px;
   height: 25px;
   margin: 0 auto;
+}
+
+.ticker-focus {
+  width: fit-content;
+  display: inline-block;
+  left: 50px;
+  position: relative;
+  font-size: 15px;
+  color: white;
 }
 
 .clear-menu-btn input[type="checkbox"] {

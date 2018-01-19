@@ -265,8 +265,9 @@ def index():
     
 
 if __name__ == "__main__":
-    mainDF       = getNews()
     stockSymbols = pandas.DataFrame.from_csv('fullStockSymbols.csv')
+    mainDF       = getNews()
+    
     app.run(host='0.0.0.0')
 
 
