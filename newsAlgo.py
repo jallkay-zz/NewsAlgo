@@ -10,6 +10,8 @@ from numpy import isnan
 import wikipedia as wiki
 from collections import OrderedDict
 import pandas
+import os
+
 
 
 #init flask
