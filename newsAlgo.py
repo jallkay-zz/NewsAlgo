@@ -68,7 +68,6 @@ def nextdoor(iterable):
 
 #pull in news 
 def getNews():
-    print("getting news")
     noData = False
     try:
         mainDF = pandas.DataFrame.from_csv('data.csv')
@@ -90,7 +89,6 @@ def getNews():
             
             for article in converted['articles']:
                 count = count + 1
-                print('progress: ' + str(count))
                 if not noData:
                     for url in mainDF.url:
                         if article['url'] == url:
@@ -144,7 +142,6 @@ def callWiki(currentWord, wikiReturn):
             splitWord = currentWord.lower().split(' ')
             for word in splitWord:
                 callWiki(word, wikiReturn)
-        print e.options
         return wikiReturn
     except:
         return wikiReturn
@@ -156,7 +153,6 @@ def getDict(item):
             try:
                 value = ast.literal_eval(value) if type(value) == str else value
             except Exception:
-                print Exception
                 continue
         if type(value) == float:
             value = "" if isnan(value) else value
