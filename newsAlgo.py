@@ -68,7 +68,7 @@ def nextdoor(iterable):
 
 #pull in news 
 def getNews():
-    print "getting news"
+    print("getting news")
     noData = False
     try:
         mainDF = pandas.DataFrame.from_csv('data.csv')
