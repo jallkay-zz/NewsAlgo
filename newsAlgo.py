@@ -169,7 +169,7 @@ def getAnalysis(newsArticle):
         if item[1] == "NNP" or item[1] == "CC":
             for split in splits:
                 if split[0] in item[0]:
-                    currentWord += ' ' if currentWord <> '' else ''
+                    currentWord += ' ' if currentWord != '' else ''
                     currentWord += item[0]
                     if split[1] == 'D': 
                         currentWord = currentWord.split(split[0])[0]
@@ -180,18 +180,18 @@ def getAnalysis(newsArticle):
                     if item[1] == "CC":
                         continue
                     else:
-                        currentWord += ' ' if currentWord <> '' else ''
+                        currentWord += ' ' if currentWord != '' else ''
                         currentWord += item[0] 
                         finished = False
                         if next:
-                            if next[1] <> "NNP" and next[1] <> "CC":
+                            if next[1] != "NNP" and next[1] != "CC":
                                 finished = True
                 else: 
-                    currentWord += ' ' if currentWord <> '' else ''
+                    currentWord += ' ' if currentWord != '' else ''
                     currentWord += item[0] 
                     finished = False
                     if next:
-                        if next[1] <> "NNP" and next[1] <> "CC":
+                        if next[1] != "NNP" and next[1] != "CC":
                             finished = True
 
         if finished:
