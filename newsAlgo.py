@@ -90,7 +90,7 @@ def getNews():
             
             for article in converted['articles']:
                 count = count + 1
-                print 'progress: ' + str(count)
+                print('progress: ' + str(count))
                 if not noData:
                     for url in mainDF.url:
                         if article['url'] == url:
