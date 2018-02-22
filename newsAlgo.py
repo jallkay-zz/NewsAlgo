@@ -128,7 +128,9 @@ def composeTag(article):
         tagDict['name'] = name
         tagDict['stockSymbol'] = getStockSymbol(name)
         tagDict['type'] = 'Other'
+        tagDict['sentiment'] = getSentiment(desc)
         article['tag_' +  str(([i for i,x in enumerate(analysis.keys()) if x == name])[0])] = tagDict
+        
     return article
 
 
@@ -201,6 +203,12 @@ def getAnalysis(newsArticle):
             currentWord = ''
             finished = False
     return wikiReturn
+
+
+def getSentiment(content):
+    # Return a sentiment
+     
+    return content
 
 @app.route('/json/headlines')
 def headlines():
