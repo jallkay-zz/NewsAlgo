@@ -96,9 +96,9 @@ def getNews(firstRun = False):
     alreadyThere = False
     count = 0
 
-    buildIndex(mainDF)
     threading.Timer(600, getNews).start()
     if not noData and firstRun:
+        buildIndex(mainDF)
         return mainDF
 
 
@@ -139,6 +139,7 @@ def getNews(firstRun = False):
     mainDF.to_csv('data.csv')
     firstRun = False
     buildIndex(mainDF)
+    print "finished getting news"
     return mainDF
 
 def composeTag(article):
