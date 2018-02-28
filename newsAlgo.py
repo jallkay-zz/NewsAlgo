@@ -12,8 +12,6 @@ from collections import OrderedDict
 import pandas
 import os
 
-nltk.download()
-
 #init flask
 app = Flask(__name__)
 
