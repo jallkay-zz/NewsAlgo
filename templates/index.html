@@ -209,15 +209,20 @@
 						//	var label = Object.keys(data)[i].split(' ')[1];
 						//	labels.push(label.substring(0, label.length - 3));
 						//}
+
+
 						window.myChart = new RangeSliderChart({
 							chartCTX: ctx,
 							type: 'line',
 							class: 'my-chart-ranger', //Specifies a custom class you want applied to your sliders
-							initial: [Object.keys(data).length - (Object.keys(data).length * 0.75), Object.keys(data).length],
+							initial: [Object.keys(data.quote).length - (Object.keys(data.quote).length * 0.75), Object.keys(data.quote).length],
 							chartData: {
-								labels: Object.keys(data),
+								labels: Object.values(data.label),
 								datasets: [{
-									data: Object.values(data),
+									data: Object.values(data.quote),
+									pointStyle: Object.values(data.pointStyle),
+									pointBackgroundColor: Object.values(data.backgroundColor),
+									pointRadius: Object.values(data.radius),
 									}],
 
 							},

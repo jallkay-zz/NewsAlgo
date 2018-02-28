@@ -32,6 +32,9 @@ stockSymbols['Microsoft'] = 'MSFT'
 stockSymbols['Cadillac'] = 'GM'
 stockSymbols['Boeing Co.'] = 'BA'
 
+stockNewsIndex = {}
+
+
 overrideData = True
 
 splits = [('.s', 'D'), ("'s", 'D'), ('Inc', 'K')]
@@ -65,6 +68,21 @@ def nextdoor(iterable):
         current_item = next_item
     yield (prev_item, current_item, None)
 
+def buildIndex(mainDF):
+    for i in range(0, len(mainDF.values)):
+        item = mainDF.values[i]
+        for name, value in zip(mainDF.columns, item):
+            if not type(value) == float:
+                if 'tag_' in name and not 'None' in value:
+                    temp = ast.literal_eval(value)
+                    print(temp)
+                    if stockNewsIndex.get(temp['stockSymbol']):
+                        stockNewsIndex[temp['stockSymbol']].append(item)
+                    else:
+                        stockNewsIndex[temp['stockSymbol']] = []
+                        stockNewsIndex[temp['stockSymbol']].append(item)
+                
+
 #pull in news 
 def getNews(firstRun = False):
     print "getting news"
@@ -78,6 +96,8 @@ def getNews(firstRun = False):
     alreadyThere = False
     count = 0
 
+    buildIndex(mainDF)
+    threading.Timer(600, getNews).start()
     if not noData and firstRun:
         return mainDF
 
@@ -118,8 +138,7 @@ def getNews(firstRun = False):
         mainDF = frame
     mainDF.to_csv('data.csv')
     firstRun = False
-    threading.Timer(600, getNews).start()
-
+    buildIndex(mainDF)
     return mainDF
 
 def composeTag(article):
@@ -247,11 +266,33 @@ def stock(type, symbol):
         return jsonify(ts.get_daily(symbol))
     if type == 'get_intraday':
         output = {}
+        output['quote'] = {}
+        output['pointStyle'] = {}
+        output['label'] = {}
+        output['backgroundColor'] = {}
+        output['radius'] = {}
         #TODO change this back 
         core = ts.get_intraday(symbol)
+
+        if stockNewsIndex.get(symbol):
+            timestamps = [datetime.strptime(item[2], "%Y-%m-%dT%H:%M:%SZ") for item in stockNewsIndex.get(symbol)]
+
         for name, value in core[0].iteritems():
-            
-            output[name] = value["1. open"]
+            priceTime = datetime.strptime(name, "%Y-%m-%d %H:%M:%S")
+            if timestamps:
+                for stamp in timestamps:
+                    if timedelta(minutes = 7, seconds = 30) > (priceTime - stamp if priceTime > stamp else stamp - priceTime):
+                        success = True
+                        break
+                    else:
+                        success = False
+                    
+
+            output['quote'][name]           = value["1. open"]
+            output['label'][name]           = name
+            output['pointStyle'][name]      = "circle"
+            output['backgroundColor'][name] = 'rgb(193, 0, 0)' if success else 'rgb(225,225,225)'
+            output['radius'][name]          = "8" if success else "3"
         return jsonify(output)
 
 
@@ -277,7 +318,7 @@ def index():
 
 if __name__ == "__main__":
     stockSymbols = pandas.DataFrame.from_csv('fullStockSymbols.csv')
-    mainDF       = getNews(firstRun = True)
+    mainDF       = getNews(firstRun=True)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
     
