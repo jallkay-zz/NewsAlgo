@@ -67,6 +67,7 @@ def nextdoor(iterable):
     yield (prev_item, current_item, None)
 
 #pull in news 
+firstRun = True
 def getNews():
     print "getting news"
     noData = False
@@ -78,6 +79,9 @@ def getNews():
     rawData = []
     alreadyThere = False
     count = 0
+
+    if not noData and firstRun:
+        return mainDF
 
 
     for source in newsSources:
@@ -115,6 +119,7 @@ def getNews():
     else:
         mainDF = frame
     mainDF.to_csv('data.csv')
+    firstRun = False
     threading.Timer(600, getNews).start()
 
     return mainDF
@@ -274,8 +279,9 @@ def index():
 
 if __name__ == "__main__":
     stockSymbols = pandas.DataFrame.from_csv('fullStockSymbols.csv')
+    mainDF       = getNews()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-    mainDF       = getNews()
+    
 
 
