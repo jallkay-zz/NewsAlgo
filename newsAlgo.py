@@ -34,7 +34,6 @@ stockSymbols['Boeing Co.'] = 'BA'
 
 overrideData = True
 
-
 splits = [('.s', 'D'), ("'s", 'D'), ('Inc', 'K')]
 
 def getStockSymbol(companyName):
@@ -67,8 +66,7 @@ def nextdoor(iterable):
     yield (prev_item, current_item, None)
 
 #pull in news 
-firstRun = True
-def getNews():
+def getNews(firstRun = False):
     print "getting news"
     noData = False
     try:
@@ -279,7 +277,7 @@ def index():
 
 if __name__ == "__main__":
     stockSymbols = pandas.DataFrame.from_csv('fullStockSymbols.csv')
-    mainDF       = getNews()
+    mainDF       = getNews(firstRun = True)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
     
