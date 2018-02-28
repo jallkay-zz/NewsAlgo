@@ -274,8 +274,8 @@ def index():
 
 if __name__ == "__main__":
     stockSymbols = pandas.DataFrame.from_csv('fullStockSymbols.csv')
-    mainDF       = getNews()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+    mainDF       = getNews()
 
 
