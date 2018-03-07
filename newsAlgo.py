@@ -27,10 +27,6 @@ redirects['apple'] = 'Apple Inc.'
 redirects['trumps'] = 'trump'
 
 stockSymbols = {}
-stockSymbols['Facebook Inc.'] = 'FB'
-stockSymbols['Microsoft'] = 'MSFT'
-stockSymbols['Cadillac'] = 'GM'
-stockSymbols['Boeing Co.'] = 'BA'
 
 stockNewsIndex = {}
 
@@ -236,6 +232,7 @@ def getSentiment(content):
 @app.route('/json/headlines')
 def headlines():
     output = []
+    counter = 0
     for item in mainDF.values:
         itemDict = {}
         for name, value in zip(mainDF.columns, item):
@@ -247,6 +244,8 @@ def headlines():
             diff = datetime.utcnow() - updatedAt
             itemDict['updatedShort'] = 'Days: ' + str(diff.days) if diff.days else 'Secs: ' + str(diff.seconds) if diff.seconds < 60 else 'Mins: ' + str(diff.seconds / 60) if diff.seconds / 60 < 60 else 'Hours: ' + str(diff.seconds / 3600)
         itemDict['source'] = itemDict['url'].split('.')[1].upper()
+        itemDict['id'] = counter
+        counter = counter + 1
         output.append(itemDict)
     return jsonify(output)
 
@@ -318,7 +317,7 @@ def index():
     
 
 if __name__ == "__main__":
-    stockSymbols = pandas.DataFrame.from_csv('fullStockSymbols.csv')
+    stockSymbols = pandas.DataFrame.from_csv('shortListedStocks.csv')
     mainDF       = getNews(firstRun=True)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
