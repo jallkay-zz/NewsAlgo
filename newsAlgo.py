@@ -107,7 +107,7 @@ def getNews(firstRun = False):
             
             for article in converted['articles']:
                 count = count + 1
-                print 'news source: %s progress: %s' % source, str(count)
+                print('news source: %s progress: %s' % (source.title(), str(count)))
                 if not noData:
                     for url in mainDF.url:
                         if article['url'] == url:
@@ -318,7 +318,7 @@ def index():
 
 if __name__ == "__main__":
     stockSymbols = pandas.DataFrame.from_csv('shortListedStocks.csv', header=0)
-    mainDF       = getNews(firstRun = True)
+    mainDF       = getNews()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
     
