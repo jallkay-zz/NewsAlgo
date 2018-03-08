@@ -1,25 +1,26 @@
-﻿NASDAQ:FB,FB,"Facebook, Inc.",Technology,"Computer Software: Programming, Data Processing",2012,NASDAQ
-NASDAQ:MSFT,MSFT,Microsoft Corporation,Technology,Computer Software: Prepackaged Software,1986,NASDAQ
-NYSE:SNAP,SNAP,Snap Inc.,Technology,"Computer Software: Programming, Data Processing",2017,NYSE
-NASDAQ:TSLA,TSLA,"Tesla, Inc. ",Capital Goods,Auto Manufacturing,2010,NASDAQ
-NYSE:XOM,XOM,Exxon Mobil Corporation,Energy,Integrated oil Companies,n/a,NYSE
-NYSE:JPM,JPM,J P Morgan Chase & Co,Finance,Major Banks,n/a,NYSE
-NYSE:MCD,MCD,McDonalds Corporation,Consumer Services,Restaurants,n/a,NYSE
-NYSE:UPS,UPS,"United Parcel Service, Inc.",Transportation,Trucking Freight/Courier Services,1999,NYSE
-NYSE:MT,MT,ArcelorMittal,Basic Industries,Steel/Iron Ore,n/a,NYSE
-NYSE:BA,BA,Boeing Company (The),Capital Goods,Aerospace,n/a,NYSE
-NYSE:GM,GM,General Motors Company,Capital Goods,Auto Manufacturing,2010,NYSE
-NYSE:RL,RL,Ralph Lauren Corporation,Consumer Non-Durables,Apparel,1997,NYSE
-NASDAQ:INTC,INTC,Intel Corporation,Technology,Semiconductors,n/a,NASDAQ
-NYSE:JNJ,JNJ,Johnson & Johnson,Health Care,Major Pharmaceuticals,n/a,NYSE
-NYSE:GE,GE,General Electric Company,Energy,Consumer Electronics/Appliances,n/a,NYSE
-NYSE:GS,GS,"Goldman Sachs Group, Inc. (The)",Finance,Investment Bankers/Brokers/Service,1999,NYSE
-NYSE:BRK.A,BRK.A,Berkshire Hathaway Inc.,Finance,Investment Management,n/a,NYSE
-NASDAQ:AMZN,AMZN,"Amazon.com, Inc.",Consumer Services,Catalog/Specialty Distribution,1997,NASDAQ
-NYSE:TRI,TRI,Thomson Reuters Corp,Consumer Services,Publishing,n/a,NYSE
-NYSE:UL,UL,Unilever PLC,Basic Industries,Package Goods/Cosmetics,n/a,NYSE
-NYSE:KO,KO,Coca-Cola Company (The),Consumer Non-Durables,Beverages (Production/Distribution),n/a,NYSE
-NYSE:NKE,NKE,"Nike, Inc.",Consumer Non-Durables,Shoe Manufacturing,n/a,NYSE
-NYSE:GSK,GSK,GlaxoSmithKline PLC,Health Care,Major Pharmaceuticals,n/a,NYSE
-NYSE:FDX,FDX,FedEx Corporation,Transportation,Air Freight/Delivery Services,n/a,NYSE
-NASDAQ:GOOGL,GOOGL,Alphabet Inc.,Technology,"Computer Software: Programming, Data Processing",n/a,NASDAQ
+full_ticker,ticker,issuerName,issuerNameShort,sector,subsector,ipo,location
+NASDAQ:FB,FB,"Facebook, Inc.",Facebook,Technology,"Computer Software: Programming, Data Processing",2012,NASDAQ
+NASDAQ:MSFT,MSFT,Microsoft Corporation,Microsoft,Technology,Computer Software: Prepackaged Software,1986,NASDAQ
+NYSE:SNAP,SNAP,Snap Inc.,Snap,Technology,"Computer Software: Programming, Data Processing",2017,NYSE
+NASDAQ:TSLA,TSLA,"Tesla, Inc. ",Tesla,Capital Goods,Auto Manufacturing,2010,NASDAQ
+NYSE:XOM,XOM,Exxon Mobil Corporation,Exxon Mobil,Energy,Integrated oil Companies,n/a,NYSE
+NYSE:JPM,JPM,J P Morgan Chase & Co,JP Morgan,Finance,Major Banks,n/a,NYSE
+NYSE:MCD,MCD,McDonalds Corporation,McDonalds,Consumer Services,Restaurants,n/a,NYSE
+NYSE:UPS,UPS,"United Parcel Service, Inc.",UPS,Transportation,Trucking Freight/Courier Services,1999,NYSE
+NYSE:MT,MT,ArcelorMittal,ArcelorMittal,Basic Industries,Steel/Iron Ore,n/a,NYSE
+NYSE:BA,BA,Boeing Company (The),Boeing,Capital Goods,Aerospace,n/a,NYSE
+NYSE:GM,GM,General Motors Company,General Motors,Capital Goods,Auto Manufacturing,2010,NYSE
+NYSE:RL,RL,Ralph Lauren Corporation,Ralph Lauren,Consumer Non-Durables,Apparel,1997,NYSE
+NASDAQ:INTC,INTC,Intel Corporation,Intel,Technology,Semiconductors,n/a,NASDAQ
+NYSE:JNJ,JNJ,Johnson & Johnson,Johnson & Johnson,Health Care,Major Pharmaceuticals,n/a,NYSE
+NYSE:GE,GE,General Electric Company,General Electric,Energy,Consumer Electronics/Appliances,n/a,NYSE
+NYSE:GS,GS,"Goldman Sachs Group, Inc. (The)",Goldman Sachs,Finance,Investment Bankers/Brokers/Service,1999,NYSE
+NYSE:BRK.A,BRK.A,Berkshire Hathaway Inc.,Berkshire Hathaway,Finance,Investment Management,n/a,NYSE
+NASDAQ:AMZN,AMZN,"Amazon.com, Inc.",Amazon,Consumer Services,Catalog/Specialty Distribution,1997,NASDAQ
+NYSE:TRI,TRI,Thomson Reuters Corp,Reuters,Consumer Services,Publishing,n/a,NYSE
+NYSE:UL,UL,Unilever PLC,Unilever,Basic Industries,Package Goods/Cosmetics,n/a,NYSE
+NYSE:KO,KO,Coca-Cola Company (The),Coca-Cola,Consumer Non-Durables,Beverages (Production/Distribution),n/a,NYSE
+NYSE:NKE,NKE,"Nike, Inc.",Nike,Consumer Non-Durables,Shoe Manufacturing,n/a,NYSE
+NYSE:GSK,GSK,GlaxoSmithKline PLC,GlaxoSmithKline,Health Care,Major Pharmaceuticals,n/a,NYSE
+NYSE:FDX,FDX,FedEx Corporation,FedEx,Transportation,Air Freight/Delivery Services,n/a,NYSE
+NASDAQ:GOOGL,GOOGL,Alphabet Inc.,Alphabet,Technology,"Computer Software: Programming, Data Processing",n/a,NASDAQ

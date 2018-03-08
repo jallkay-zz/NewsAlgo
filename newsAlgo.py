@@ -17,7 +17,9 @@ app = Flask(__name__)
 
 # newsApi stuff
 newsApiKey  = '3e05eceb5b124303a021684e2152dcc5'
-newsSources = ['the-wall-street-journal', 'the-economist', 'business-insider', 'bloomberg', 'bbc-news']
+#newsSources = ['the-wall-street-journal', 'the-economist', 'business-insider', 'bloomberg', 'bbc-news']
+
+
 
 # stock quotes
 ts = TimeSeries(key='YWBHDJPSFY0S9FHO')
@@ -37,12 +39,8 @@ splits = [('.s', 'D'), ("'s", 'D'), ('Inc', 'K')]
 
 def getStockSymbol(companyName):
     for name in stockSymbols.values:
-        if companyName.lower() in name[1].lower():
+        if companyName.lower() in name[1].lower() or companyName.lower() in name[2].lower():
             return name[0]
-
-
-
-
 
 def convert(input):
     if isinstance(input, dict):
@@ -81,6 +79,7 @@ def buildIndex(mainDF):
 
 #pull in news 
 def getNews(firstRun = False):
+    newsSources = [name[2].lower() for name in stockSymbols.values]
     print "getting news"
     noData = False
     try:
@@ -99,7 +98,7 @@ def getNews(firstRun = False):
 
 
     for source in newsSources:
-        newsUrl     = ('http://newsapi.org/v1/articles?source=%s&sortBy=top&apiKey=' % source) + newsApiKey
+        newsUrl     = ('https://newsapi.org/v2/everything?q=%s&from=2018-03-05&sortBy=popularity&apiKey=' % source) + newsApiKey
         response    = urllib.urlopen(newsUrl)
         returned    = response.read()
         if returned:
@@ -108,7 +107,7 @@ def getNews(firstRun = False):
             
             for article in converted['articles']:
                 count = count + 1
-                print 'progress: ' + str(count)
+                print 'news source: %s progress: %s' % source, str(count)
                 if not noData:
                     for url in mainDF.url:
                         if article['url'] == url:
@@ -186,41 +185,42 @@ def getAnalysis(newsArticle):
     wikiReturn    = {}
     finished      = False
     currentWord   = ''
-    tokenised     = nltk.pos_tag(nltk.word_tokenize(newsArticle['title'].replace('-', ' ') + ' ' + newsArticle['description'].replace('-', ' ')))
-    tokeniseddict = OrderedDict( tokenised )
-    for prev, item, next in nextdoor(tokenised):
-        if item[1] == "NNP" or item[1] == "CC":
-            for split in splits:
-                if split[0] in item[0]:
-                    currentWord += ' ' if currentWord <> '' else ''
-                    currentWord += item[0]
-                    if split[1] == 'D': 
-                        currentWord = currentWord.split(split[0])[0]
-                    finished = True
-                    break
-            if not finished:
-                if currentWord == '':
-                    if item[1] == "CC":
-                        continue
-                    else:
+    if newsArticle.get('title') and newsArticle.get('description'):
+        tokenised     = nltk.pos_tag(nltk.word_tokenize(newsArticle['title'].replace('-', ' ') + ' ' + newsArticle['description'].replace('-', ' ')))
+        tokeniseddict = OrderedDict( tokenised )
+        for prev, item, next in nextdoor(tokenised):
+            if item[1] == "NNP" or item[1] == "CC":
+                for split in splits:
+                    if split[0] in item[0]:
+                        currentWord += ' ' if currentWord <> '' else ''
+                        currentWord += item[0]
+                        if split[1] == 'D': 
+                            currentWord = currentWord.split(split[0])[0]
+                        finished = True
+                        break
+                if not finished:
+                    if currentWord == '':
+                        if item[1] == "CC":
+                            continue
+                        else:
+                            currentWord += ' ' if currentWord <> '' else ''
+                            currentWord += item[0] 
+                            finished = False
+                            if next:
+                                if next[1] <> "NNP" and next[1] <> "CC":
+                                    finished = True
+                    else: 
                         currentWord += ' ' if currentWord <> '' else ''
                         currentWord += item[0] 
                         finished = False
                         if next:
                             if next[1] <> "NNP" and next[1] <> "CC":
                                 finished = True
-                else: 
-                    currentWord += ' ' if currentWord <> '' else ''
-                    currentWord += item[0] 
-                    finished = False
-                    if next:
-                        if next[1] <> "NNP" and next[1] <> "CC":
-                            finished = True
 
-        if finished:
-            wikiReturn = callWiki(currentWord, wikiReturn)
-            currentWord = ''
-            finished = False
+            if finished:
+                wikiReturn = callWiki(currentWord, wikiReturn)
+                currentWord = ''
+                finished = False
     return wikiReturn
 
 
@@ -317,8 +317,8 @@ def index():
     
 
 if __name__ == "__main__":
-    stockSymbols = pandas.DataFrame.from_csv('shortListedStocks.csv')
-    mainDF       = getNews(firstRun=True)
+    stockSymbols = pandas.DataFrame.from_csv('shortListedStocks.csv', header=0)
+    mainDF       = getNews(firstRun = True)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
     
