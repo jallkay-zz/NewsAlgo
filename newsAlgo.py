@@ -39,7 +39,9 @@ splits = [('.s', 'D'), ("'s", 'D'), ('Inc', 'K')]
 
 def getStockSymbol(companyName):
     for name in stockSymbols.values:
-        if companyName.lower() in name[1].lower() or companyName.lower() in name[2].lower():
+        if companyName.lower() == name[1].lower() or companyName.lower() == name[2].lower():
+            return name[0]
+        elif companyName.lower() in name[2].lower():
             return name[0]
 
 def convert(input):
@@ -65,16 +67,19 @@ def nextdoor(iterable):
 def buildIndex(mainDF):
     for i in range(0, len(mainDF.values)):
         item = mainDF.values[i]
-        for name, value in zip(mainDF.columns, item):
-            if not type(value) == float:
-                if 'tag_' in name and not 'None' in value:
-                    temp = ast.literal_eval(value)
-                    print(temp)
-                    if stockNewsIndex.get(temp['stockSymbol']):
-                        stockNewsIndex[temp['stockSymbol']].append(item)
-                    else:
-                        stockNewsIndex[temp['stockSymbol']] = []
-                        stockNewsIndex[temp['stockSymbol']].append(item)
+        try:
+            for name, value in zip(mainDF.columns, item):
+                if not type(value) == float:
+                    if 'tag_' in name and not 'None' in value:
+                        temp = ast.literal_eval(value)
+                        print(temp)
+                        if stockNewsIndex.get(temp['stockSymbol']):
+                            stockNewsIndex[temp['stockSymbol']].append(item)
+                        else:
+                            stockNewsIndex[temp['stockSymbol']] = []
+                            stockNewsIndex[temp['stockSymbol']].append(item)
+        except:
+            print("execption in building index")
                 
 
 #pull in news 
@@ -91,14 +96,15 @@ def getNews(firstRun = False):
     alreadyThere = False
     count = 0
 
-    threading.Timer(600, getNews).start()
+    threading.Timer(3600, getNews).start()
     if not noData and firstRun:
         buildIndex(mainDF)
         return mainDF
 
 
     for source in newsSources:
-        newsUrl     = ('https://newsapi.org/v2/everything?q=%s&from=2018-03-05&sortBy=popularity&apiKey=' % source) + newsApiKey
+        goBack = datetime.strftime(date.today() - timedelta(days = 1), "%Y-%m-%d")
+        newsUrl     = ('https://newsapi.org/v2/everything?q=%s&from=%s&sortBy=relevancy&sources=bloomberg,bbc-news,financial-times,reuters,fortune,financial-post&language=en&apiKey=' % (source, goBack)) + newsApiKey
         response    = urllib.urlopen(newsUrl)
         returned    = response.read()
         if returned:
@@ -154,6 +160,7 @@ def composeTag(article):
 
 def callWiki(currentWord, wikiReturn):
     try:
+
         redirectedWord = redirects.get(currentWord.lower(), currentWord)
         wikiReturn[redirectedWord] = wiki.summary(redirectedWord, sentences=2)
         return wikiReturn
@@ -209,6 +216,9 @@ def getAnalysis(newsArticle):
                             if next:
                                 if next[1] <> "NNP" and next[1] <> "CC":
                                     finished = True
+                    elif currentWord.lower() in [name[2].lower() for name in stockSymbols.values]: 
+                        finished = True
+                        break
                     else: 
                         currentWord += ' ' if currentWord <> '' else ''
                         currentWord += item[0] 
@@ -301,19 +311,19 @@ def index():
     return render_template('index.html', header="")
 
 # ONLY USE WHEN YOURE OVERRITING THE CSV
-#@app.route('/json/all')
-#def getAllData():
-#    mainDict = []
-#    progress = 0
-#    for rawItem in mainDF.values:
-#        progress = progress + 1
-#        print 'progress: ' + str(progress)
-#        item = getDict(rawItem)
-#        mainDict.append(composeTag(item))
-#    
-#    frame = pandas.DataFrame.from_dict(mainDict)
-#    frame.to_csv('data.csv')
-#    return jsonify(mainDict)
+@app.route('/json/all')
+def getAllData():
+    mainDict = []
+    progress = 0
+    for rawItem in mainDF.values:
+        progress = progress + 1
+        print 'progress: ' + str(progress)
+        item = getDict(rawItem)
+        mainDict.append(composeTag(item))
+    
+    frame = pandas.DataFrame.from_dict(mainDict)
+    frame.to_csv('data.csv')
+    return jsonify(mainDict)
     
 
 if __name__ == "__main__":
