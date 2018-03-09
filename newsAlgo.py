@@ -282,7 +282,7 @@ def stock(type, symbol):
         output['backgroundColor'] = {}
         output['radius'] = {}
         #TODO change this back 
-        core = ts.get_intraday(symbol)
+        core = ts.get_intraday(symbol, interval='15min', outputsize='full')
 
         if stockNewsIndex.get(symbol):
             timestamps = [datetime.strptime(item[2], "%Y-%m-%dT%H:%M:%SZ") for item in stockNewsIndex.get(symbol)]
@@ -291,7 +291,8 @@ def stock(type, symbol):
             priceTime = datetime.strptime(name, "%Y-%m-%d %H:%M:%S")
             if timestamps:
                 for stamp in timestamps:
-                    if timedelta(minutes = 7, seconds = 30) > (priceTime - stamp if priceTime > stamp else stamp - priceTime):
+                    compare = priceTime - stamp if priceTime > stamp else stamp - priceTime
+                    if timedelta(minutes = 7, seconds = 30) > compare:
                         success = True
                         break
                     else:
@@ -299,10 +300,10 @@ def stock(type, symbol):
                     
 
             output['quote'][name]           = value["1. open"]
-            output['label'][name]           = name
+            output['label'][name]           = [stockNewsIndex.get(symbol)[timestamps.index(stamp)][14], name] if success else name
             output['pointStyle'][name]      = "circle"
             output['backgroundColor'][name] = 'rgb(193, 0, 0)' if success else 'rgb(225,225,225)'
-            output['radius'][name]          = "8" if success else "3"
+            output['radius'][name]          = "8" if success else "1"
         return jsonify(output)
 
 
@@ -328,7 +329,7 @@ def getAllData():
 
 if __name__ == "__main__":
     stockSymbols = pandas.DataFrame.from_csv('shortListedStocks.csv', header=0)
-    mainDF       = getNews()
+    mainDF       = getNews(firstRun=True)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
     

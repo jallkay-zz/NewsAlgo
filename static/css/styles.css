@@ -197,8 +197,9 @@ hr {
 }
 
 .range-slider {
-    height: 20px;
-    width: 100%!important;
+  height: 20px;
+  width: 100%!important;
+  margin: 0px;
 }
 
 .noUi-base {

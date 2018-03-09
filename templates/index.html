@@ -14,7 +14,7 @@
 		<script defer src="https://use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
 		<link href="https://fonts.googleapis.com/css?family=Quicksand:300,400,500,700" rel="stylesheet">
 		<link rel="stylesheet" href="../static/css/smoothness/jquery-ui-1.11.3.custom.css" type="text/css"/>
-		<link rel="stylesheet" href="https://cdn.rawgit.com/schme16/Chart.js-RangeSlider/2c535a577c5f475bc34d9020d46622f1bd33daa9/dist/RangeSlider-all.min.css" type="text/css"/>
+		<link rel="stylesheet" type="text/css" href="../static/css/RangeSlider-all.min.css"/>
 		<link rel="stylesheet" type="text/css" href="../static/css/styles.css">
 
 		<script type="text/javascript" src="../static/jquery.js"></script>
@@ -126,7 +126,7 @@
 
 		
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.6.0/Chart.js"></script>
-		<script src="https://gitcdn.link/cdn/schme16/Chart.js-RangeSlider/2dc49a0980ca04ca2690bc5f1c9e3644e4207b5a/dist/RangeSlider-all.min.js"></script>
+		<script type="text/javascript" src="../static/RangeSlider-all.min.js"></script>
 		<script src="../static/lib/firebugx.js"></script>
 		<script src="../static/lib/jquery-1.11.2.min.js"></script>
 		<script src="../static/lib/jquery-ui-1.11.3.min.js"></script>
@@ -167,10 +167,10 @@
 			var indexNumber;
 			var data = [];
 			var columns = [
-				{id: "source", name: "Source", field: "source", width: 60, editor: Slick.Editors.Text, sortable:true},
+				{id: "source", name: "Source", field: "source", width: 100, editor: Slick.Editors.Text, sortable:true},
 				//{id: "publishedAt", name: "Published", field: "publishedAt", width: 50, editor: Slick.Editors.Text, sortable:true},
-				{id: "updatedShort", name: "Updated", field: "updatedShort", width: 50, editor: Slick.Editors.Text, sortable:true},
-				{id: "title", name: "Headline", field: "title", width: 200, editor: Slick.Editors.Text, sortable:true},
+				{id: "updatedShort", name: "Updated", field: "updatedShort", width: 70, editor: Slick.Editors.Text, sortable:true},
+				{id: "title", name: "Headline", field: "title", width: 230, editor: Slick.Editors.Text, sortable:true},
 				
 			];
 			var options = {
@@ -237,7 +237,7 @@
 					grid.onClick.subscribe(cellClicked);
 					//var pager = new Slick.Controls.Pager(dataView, grid, $("#pager"));
   					//var columnpicker = new Slick.Controls.ColumnPicker(columns, grid, options);
-					grid.autosizeColumns()
+					//grid.autosizeColumns()
 					$("#inlineFilterPanel")
     					.appendTo(grid.getTopPanel())
     					.show();
@@ -391,8 +391,10 @@
 								datasets: [{
 									data: Object.values(data.quote),
 									pointStyle: Object.values(data.pointStyle),
-									pointBackgroundColor: Object.values(data.backgroundColor),
 									pointRadius: Object.values(data.radius),
+									pointBackgroundColor: Object.values(data.backgroundColor),
+									pointBorderColor: Object.values(data.backgroundColor),
+									
 									}],
 
 							},
