@@ -191,7 +191,7 @@ hr {
     box-shadow: none;
     transition: background 450ms;
 }
-#sentimentChart {
+#sentiment {
   display: block;
   height: 200px;
   position: absolute;
@@ -208,6 +208,7 @@ hr {
   width: 100%!important;
   margin: 0px;
 }
+
 
 .noUi-base {
   transition: background 450ms;
