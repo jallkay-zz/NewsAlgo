@@ -191,7 +191,14 @@ hr {
     box-shadow: none;
     transition: background 450ms;
 }
-
+#sentimentChart {
+  display: block;
+  height: 200px;
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  padding: 10px;
+}
 .noUi-origin {
   border-radius: 0px;
 }

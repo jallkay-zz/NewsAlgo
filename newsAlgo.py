@@ -5,12 +5,15 @@ import urllib, json
 import threading
 from alpha_vantage.timeseries import TimeSeries
 import nltk
+from nltk.sentiment.vader import SentimentIntensityAnalyzer as sentAnalysis
 import ast
 from numpy import isnan
 import wikipedia as wiki
 from collections import OrderedDict
 import pandas
 import os
+import sys
+import pymongo
 
 #init flask
 app = Flask(__name__)
@@ -18,7 +21,7 @@ app = Flask(__name__)
 # newsApi stuff
 newsApiKey  = '3e05eceb5b124303a021684e2152dcc5'
 #newsSources = ['the-wall-street-journal', 'the-economist', 'business-insider', 'bloomberg', 'bbc-news']
-
+uri = 'mongodb://jamesak:Lancaster1@ds261118.mlab.com:61118/heroku_glkl90f7'
 
 
 # stock quotes
@@ -103,8 +106,8 @@ def getNews(firstRun = False):
 
 
     for source in newsSources:
-        goBack = datetime.strftime(date.today() - timedelta(days = 1), "%Y-%m-%d")
-        newsUrl     = ('https://newsapi.org/v2/everything?q=%s&from=%s&sortBy=relevancy&sources=bloomberg,bbc-news,financial-times,reuters,fortune,financial-post&language=en&apiKey=' % (source, goBack)) + newsApiKey
+        goBack = datetime.strftime(date.today() - timedelta(days = 5), "%Y-%m-%d")
+        newsUrl     = ('https://newsapi.org/v2/everything?q=%s&from=%s&sortBy=popularity&sources=bloomberg,bbc-news,financial-times,reuters,fortune,financial-post&language=en&apiKey=' % (source, goBack)) + newsApiKey
         response    = urllib.urlopen(newsUrl)
         returned    = response.read()
         if returned:
@@ -152,9 +155,8 @@ def composeTag(article):
         tagDict['name'] = name
         tagDict['stockSymbol'] = getStockSymbol(name)
         tagDict['type'] = 'Other'
-        tagDict['sentiment'] = getSentiment(desc)
         article['tag_' +  str(([i for i,x in enumerate(analysis.keys()) if x == name])[0])] = tagDict
-        
+    article['sentiment'] = getSentiment(article['title'] + ' ' + article['description'])
     return article
 
 
@@ -183,6 +185,9 @@ def getDict(item):
             except Exception:
                 print Exception
                 continue
+        if 'sentiment' in name:
+            value = ast.literal_eval(value)
+            del value['compound']
         if type(value) == float:
             value = "" if isnan(value) else value
         itemDict[name] = value
@@ -236,8 +241,9 @@ def getAnalysis(newsArticle):
 
 def getSentiment(content):
     # Return a sentiment
-     
-    return content
+    sid = sentAnalysis()
+    sentiment = sid.polarity_scores(content)
+    return sentiment
 
 @app.route('/json/headlines')
 def headlines():
@@ -268,6 +274,12 @@ def detail(mainID):
 def detailAnalysis(mainID):
     returnData = mainDF.values[mainID]
     return jsonify(getDict(returnData))
+
+@app.route('/json/mongo')
+def mongo():
+    records = json.loads(mainDF.T.to_json()).values()
+    db.myCollection.insert(records)
+    return "Successful"
 
 @app.route('/json/stock/<type>/<symbol>')
 def stock(type, symbol):
@@ -329,6 +341,8 @@ def getAllData():
 
 if __name__ == "__main__":
     stockSymbols = pandas.DataFrame.from_csv('shortListedStocks.csv', header=0)
+    client = pymongo.MongoClient(uri)
+    db = client.get_default_database()
     mainDF       = getNews(firstRun=True)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)

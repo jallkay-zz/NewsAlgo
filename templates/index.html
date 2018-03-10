@@ -92,7 +92,7 @@
 																					<div id="desc"></div>
 																					<div id="tags"></div>
 																					<div id="tag_desc"></div>
-
+																					<div id="sentiment"><canvas id="sentimentChart" height="250" width="250"></canvas></div>
 																				</div>
 																				</li>
 					<li data-row="1" data-col="1" data-sizex="3" data-sizey="2"><div class="draggable">
@@ -450,6 +450,8 @@
 						$("#title").html("<a href=" + data['url'] + " target='_blank'><u><h3>" + data['title'] + "<u/><h3/></a>");
 						$("#ref_img").html("<img src=" + data['urlToImage'] + ">");
 						$("#desc").html("<p>" + data['description'] + "</p><hr>");
+
+						
 						
 					}
 				});
@@ -471,9 +473,29 @@
 							descOutput += "<div class='d_tag_" + i + "'><p>" + data['tag_' + i]['desc'] + "</p></div>";
 						}
 						
+						if (window.sentimentChart.chart) {
+							window.sentimentChart.chart.destroy();
+						}
 						$("#tags").html(output);
 						$("#tag_desc").html(descOutput);
-						
+						var sctx = document.getElementById("sentimentChart").getContext('2d');
+						window.sentimentChart = new Chart(sctx,{
+							type: 'pie',
+							data: {
+								labels: Object.keys(data['sentiment']),
+								datasets: [{
+									data: Object.values(data['sentiment']),
+									backgroundColor: ['red', 'gray', 'green'],
+								}],
+							
+							},
+							options: { legend: {
+									display: false
+								},
+								responsive: false,
+							}
+						});
+
 
 						for (var i = 0, l = tags.length - 1; i < l; i++) {
 							$(".d_tag_" + i).hide();
