@@ -358,7 +358,7 @@ if __name__ == "__main__":
     stockSymbols = pandas.DataFrame.from_csv('shortListedStocks.csv', header=0)
     client = pymongo.MongoClient(uri)
     db = client.get_default_database()
-    mainDF       = getNews(firstRun=False)
+    mainDF       = getNews(firstRun=True)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
     
