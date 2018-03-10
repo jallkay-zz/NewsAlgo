@@ -11,6 +11,7 @@ from numpy import isnan
 import wikipedia as wiki
 from collections import OrderedDict
 import pandas
+import edgar
 import os
 import sys
 import pymongo
@@ -88,6 +89,7 @@ def buildIndex(mainDF):
 #pull in news 
 def getNews(firstRun = False):
     newsSources = [name[2].lower() for name in stockSymbols.values]
+    cik = [name[7] for name in stockSymbols.values]
     print "getting news"
     noData = False
     try:
@@ -105,7 +107,20 @@ def getNews(firstRun = False):
         return mainDF
 
 
-    for source in newsSources:
+    for source, cik in zip(newsSources, cik):
+        
+        ciklen = len(str(int(cik))) 
+        if not ciklen == 10:
+            newcik = ""
+            for i in range (0, 10-ciklen):
+                newcik += "0"
+        cik = newcik + str(cik)
+
+        # 10-Q filings - to be ran only ever few weeks or during close times?
+        #company = edgar.Company(source, cik)
+        #tree = company.getAllFilings(filingType = "10-K")
+        #docs = edgar.getDocuments(tree, noOfDocuments=5)
+
         goBack = datetime.strftime(date.today() - timedelta(days = 5), "%Y-%m-%d")
         newsUrl     = ('https://newsapi.org/v2/everything?q=%s&from=%s&sortBy=popularity&sources=bloomberg,bbc-news,financial-times,reuters,fortune,financial-post&language=en&apiKey=' % (source, goBack)) + newsApiKey
         response    = urllib.urlopen(newsUrl)
@@ -343,7 +358,7 @@ if __name__ == "__main__":
     stockSymbols = pandas.DataFrame.from_csv('shortListedStocks.csv', header=0)
     client = pymongo.MongoClient(uri)
     db = client.get_default_database()
-    mainDF       = getNews(firstRun=True)
+    mainDF       = getNews(firstRun=False)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
     
