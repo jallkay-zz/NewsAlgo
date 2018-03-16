@@ -35,11 +35,37 @@ redirects['trumps'] = 'trump'
 stockSymbols = {}
 
 stockNewsIndex = {}
+initFunds = 25000.00
 
+availableTickerFunds = {} # put amount of funds remaining in here 
+shareTicker = {} # put num of shares owned per ticker in here
 
 overrideData = True
 
 splits = [('.s', 'D'), ("'s", 'D'), ('Inc', 'K')]
+
+def splitTickerfunds():
+    size = len(stockSymbols.values)
+    for ticker in stockSymbols.values:
+        availableTickerFunds[ticker[0]] = initFunds / size
+        shareTicker[ticker[0]] = 0
+    
+def buyStock(ticker, price, shares):
+    availableFunds = availableTickerFunds[ticker]
+    requestedFunds = price * shares
+    if requestedFunds < availableFunds:
+        availableTickerFunds[ticker] -= requestedFunds
+        shareTicker[ticker] += shares
+        return "BOUGHT %f of %s at %f amount available %f" % (shares, ticker, price, availableTickerFunds[ticker])
+    
+def sellStock(ticker, price, shares):
+    availableFunds = availableTickerFunds[ticker]
+    investedShares  = shareTicker[ticker]
+    requestedFunds = price * shares
+    if investedShares >= shares:
+        availableTickerFunds[ticker] += requestedFunds
+        shareTicker[ticker] -= shares
+        return "SOLD %f of %s at %f amount available %f" % (shares, ticker, price, availableTickerFunds[ticker])
 
 def getStockSymbol(companyName):
     for name in stockSymbols.values:
@@ -118,7 +144,7 @@ def getNews(firstRun = False):
 
         # 10-Q filings - to be ran only ever few weeks or during close times?
         #company = edgar.Company(source, cik)
-        #tree = company.getAllFilings(filingType = "10-K")
+        #tree = company.getAllFilings(filingType = "10-Q")
         #docs = edgar.getDocuments(tree, noOfDocuments=5)
 
         goBack = datetime.strftime(date.today() - timedelta(days = 5), "%Y-%m-%d")
@@ -290,16 +316,45 @@ def detailAnalysis(mainID):
     returnData = mainDF.values[mainID]
     return jsonify(getDict(returnData))
 
-@app.route('/json/mongo')
-def mongo():
-    records = json.loads(mainDF.T.to_json()).values()
-    db.myCollection.insert(records)
-    return "Successful"
+@app.route('/json/total')
+def getTotal():
+    available = sum(availableTickerFunds.values())
+    core = ts.get_batch_stock_quotes(shareTicker.keys())
+    invested = sum([shares * float(value['2. price']) for value, shares in zip(core[0], shareTicker.values())])
+
+    total = available + invested
+    return jsonify("$" + str(total))
+
+@app.route('/json/totalall')
+def getAllTotal():
+    output = {}
+    core = ts.get_batch_stock_quotes(shareTicker.keys())
+    invested = [shares * float(value['2. price']) for value, shares in zip(core[0], shareTicker.values())]
+    for name, i, j in zip(availableTickerFunds.keys(), availableTickerFunds.values(), invested):
+        output[name] = i + j 
+    return jsonify(output)
+
+@app.route('/json/<command>/<ticker>/<float:price>/<int:shares>')
+def moveStock(command, ticker, price, shares):
+    if command == "sell":
+        response = sellStock(ticker, price, shares)
+    elif command == "buy":
+        response = buyStock(ticker, price, shares)
+    print(response)
+    return jsonify(response)
+
+    
+# @app.route('/json/mongo')
+# def mongo():
+#     records = json.loads(mainDF.T.to_json()).values()
+#     db.myCollection.insert(records)
+#     return "Successful"
 
 @app.route('/json/stock/<type>/<symbol>')
 def stock(type, symbol):
     if type == 'get_daily':
         # if the amount of articles on the subject goes back, do the full one 
+        
         return jsonify(ts.get_daily(symbol))
     if type == 'get_intraday':
         output = {}
@@ -309,7 +364,7 @@ def stock(type, symbol):
         output['backgroundColor'] = {}
         output['radius'] = {}
         #TODO change this back 
-        core = ts.get_intraday(symbol, interval='15min', outputsize='full')
+        core = ts.get_intraday(symbol, interval='1min', outputsize='full')
 
         if stockNewsIndex.get(symbol):
             timestamps = [datetime.strptime(item[2], "%Y-%m-%dT%H:%M:%SZ") for item in stockNewsIndex.get(symbol)]
@@ -356,6 +411,7 @@ def getAllData():
 
 if __name__ == "__main__":
     stockSymbols = pandas.DataFrame.from_csv('shortListedStocks.csv', header=0)
+    splitTickerfunds()
     client = pymongo.MongoClient(uri)
     db = client.get_default_database()
     mainDF       = getNews(firstRun=True)

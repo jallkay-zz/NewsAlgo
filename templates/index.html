@@ -41,7 +41,7 @@
 	</div>
 	<p style="color: darkred;font-size: 12px;">ALPHA</p>
     <div class="row">
-		<h1 class="page-header" id="nametag">{{ header }}</h1>
+		<div class="total-funds"><div class="funds-figure">£10,000</div> </div>
         <img src="../static/logo.png" style="height:100px;width:auto;">
     </div>
 		<section class="demo">
@@ -92,7 +92,7 @@
 																					<div id="desc"></div>
 																					<div id="tags"></div>
 																					<div id="tag_desc"></div>
-																					<div id="sentiment"><canvas id="sentimentChart" height="200" width="200"></canvas></div>
+																					
 																				</div>
 																				</li>
 					<li data-row="1" data-col="1" data-sizex="3" data-sizey="2"><div class="draggable">
@@ -119,6 +119,18 @@
 																						<span class="circle"></span>
 																					</div><hr style="margin-bottom: 0px;">
 																				</div>
+																				</li>
+					<li data-row="1" data-col="1" data-sizex="2" data-sizey="2"><div class="draggable">
+																					<subtitle>Graph</subtitle>
+																					<div class="clear-menu-btn">
+																						<input type="checkbox" onclick="removeWidget()">
+																						<span class="top"></span>
+																						<span class="middle"></span>
+																						<span class="bottom"></span>
+																						<span class="circle"></span>
+																					</div><hr style="margin-bottom: 0px;">
+																				</div>
+																				<div id="sentiment"><canvas id="sentimentChart" height="330" width="330"></canvas></div>
 																				</li>
 				</ul>
 			</div>
@@ -183,6 +195,7 @@
 			var sortdir = 1;
 			var percentCompleteThreshold = 0;
 			var searchString = "";
+			updateTotal();
 
 			function requiredFieldValidator(value) {
 				if (value == null || value == undefined || !value.length) {
@@ -225,7 +238,19 @@
 				$(e.target).removeClass("ui-state-hover")
 			});
 
-
+			function updateTotal() {
+				$.ajax({
+					type: "GET",
+					url: 'json/total',
+					dataType: 'json',
+					success: function (data) {
+						$('.funds-figure')[0].innerHTML = data;
+					},
+					complete: function() {
+						setTimeout(updateTotal, 60000)
+					}
+				});
+			}
 			$.ajax({
 				type: "GET",
 				url: 'json/headlines',
@@ -367,68 +392,76 @@
 
 			function companyClicked(e, args) {
 				stockSymbol = e;
-				$('.ticker-focus')[0].innerHTML = stockSymbol;
+				
 				$.ajax({
 					type: "GET",
 					url: 'json/stock/get_intraday/' + stockSymbol,
 					dataType: 'json',
 					success: function (data) {
-						var ctx = document.getElementById("myChart").getContext('2d');
-						//var labels = [];
-						//for (var i = 0, l = Object.keys(data).length; i < l; i++) {
-						//	var label = Object.keys(data)[i].split(' ')[1];
-						//	labels.push(label.substring(0, label.length - 3));
-						//}
+
+						if(args == true && e == $('.ticker-focus')[0].innerHTML) {
+							window.myChart.datasets.labels.push(data.label);
+							window.myChart.datasets.datasets[0].data.push(data.quote);
+							window.myChart.chart.update();
+						}
+						else if (args == false) {
+							var ctx = document.getElementById("myChart").getContext('2d');
 
 
-						window.myChart = new RangeSliderChart({
-							chartCTX: ctx,
-							type: 'line',
-							class: 'my-chart-ranger', //Specifies a custom class you want applied to your sliders
-							initial: [Object.keys(data.quote).length - (Object.keys(data.quote).length * 0.75), Object.keys(data.quote).length],
-							chartData: {
-								labels: Object.values(data.label),
-								datasets: [{
-									data: Object.values(data.quote),
-									pointStyle: Object.values(data.pointStyle),
-									pointRadius: Object.values(data.radius),
-									pointBackgroundColor: Object.values(data.backgroundColor),
-									pointBorderColor: Object.values(data.backgroundColor),
-									
-									}],
+							$('.ticker-focus')[0].innerHTML = stockSymbol;
+							window.myChart = new RangeSliderChart({
+								chartCTX: ctx,
+								type: 'line',
+								class: 'my-chart-ranger', //Specifies a custom class you want applied to your sliders
+								initial: [Object.keys(data.quote).length - (Object.keys(data.quote).length * 0.75), Object.keys(data.quote).length],
+								chartData: {
+									labels: Object.values(data.label),
+									datasets: [{
+										data: Object.values(data.quote),
+										pointStyle: Object.values(data.pointStyle),
+										pointRadius: Object.values(data.radius),
+										pointBackgroundColor: Object.values(data.backgroundColor),
+										pointBorderColor: Object.values(data.backgroundColor),
+										
+										}],
 
-							},
-							chartOpts: {
-								legend: {
-									display: false
 								},
-								tooltips: {
-									callbacks: {
-										label: function(tooltipItem) {
-											return tooltipItem.yLabel;
-											//to display the custom news point on it put it here
-										}
-									}
-								},
-								scales: {
-									xAxes: [{
-										ticks: {
-											maxRotation: 0,
-											minRotation: 0
-										},
+								chartOpts: {
+									legend: {
 										display: false
-
-									}],
-									yAxes: [{
-										ticks: {
-											maxRotation: 0,
-											minRotation: 0
+									},
+									tooltips: {
+										callbacks: {
+											label: function(tooltipItem) {
+												return tooltipItem.yLabel;
+												//to display the custom news point on it put it here
+											}
 										}
-									}],
-									}
-							}
-						});
+									},
+									scales: {
+										xAxes: [{
+											ticks: {
+												maxRotation: 0,
+												minRotation: 0
+											},
+											display: false
 
+										}],
+										yAxes: [{
+											ticks: {
+												maxRotation: 0,
+												minRotation: 0
+											}
+										}],
+										}
+								}
+							});
+						}
+					},
+					complete: function() {
+						if($('.ticker-focus')[0].innerHTML == e) {
+							setTimeout(companyClicked(e, updating = true), 400)
+						}
 					}
 				});
 			};
@@ -523,7 +556,7 @@
 				}
 				$(tag.split('-')[0]).css({"display" : "block"});
 				if (tag.split('-')[1] != 'null') {
-					companyClicked(tag.split('-')[1]);
+					companyClicked(tag.split('-')[1], updating = false);
 				}
 			}
 
