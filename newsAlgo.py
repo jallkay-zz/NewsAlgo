@@ -210,6 +210,8 @@ def getDict(item):
                 print Exception
                 continue
         if 'sentiment' in name:
+            if type(value) == unicode:
+                value = ast.literal_eval(value)
             del value['compound']
         if type(value) == float:
             value = "" if isnan(value) else value
