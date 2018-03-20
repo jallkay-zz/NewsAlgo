@@ -1,3 +1,6 @@
 punkt
 averaged_perceptron_tagger
 twitter
+vader_lexicon
+sentiwordnet
+sentence_polarity
