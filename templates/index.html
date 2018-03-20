@@ -210,10 +210,10 @@
 					return false;
 				}
 				if (args.searchString != "" &&  item["title"].toLowerCase().indexOf(args.searchString) == -1 && item["source"].toLowerCase().indexOf(args.searchString) == -1 
-										    &&  item["tag_0"].toLowerCase().indexOf(args.searchString) == -1 &&  item["tag_1"].toLowerCase().indexOf(args.searchString) == -1
-											&&  item["tag_2"].toLowerCase().indexOf(args.searchString) == -1 &&  item["tag_3"].toLowerCase().indexOf(args.searchString) == -1
-											&&  item["tag_4"].toLowerCase().indexOf(args.searchString) == -1 &&  item["tag_5"].toLowerCase().indexOf(args.searchString) == -1
-											&&  item["tag_6"].toLowerCase().indexOf(args.searchString) == -1 &&  item["tag_7"].toLowerCase().indexOf(args.searchString) == -1)                                         
+										    &&  item["tag_0"]["stockSymbol"].toLowerCase().indexOf(args.searchString) == -1 &&  item["tag_1"]["stockSymbol"].toLowerCase().indexOf(args.searchString) == -1
+											&&  item["tag_2"]["stockSymbol"].toLowerCase().indexOf(args.searchString) == -1 &&  item["tag_3"]["stockSymbol"].toLowerCase().indexOf(args.searchString) == -1
+											&&  item["tag_4"]["stockSymbol"].toLowerCase().indexOf(args.searchString) == -1 &&  item["tag_5"]["stockSymbol"].toLowerCase().indexOf(args.searchString) == -1
+											&&  item["tag_6"]["stockSymbol"].toLowerCase().indexOf(args.searchString) == -1 &&  item["tag_7"]["stockSymbol"].toLowerCase().indexOf(args.searchString) == -1)                                         
 				{
 				return false;
 				}

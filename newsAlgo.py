@@ -167,9 +167,17 @@ def composeTag(article):
         tagDict = {}
         tagDict['desc'] = desc if desc else ""
         tagDict['name'] = name if name else ""
-        tagDict['stockSymbol'] = getStockSymbol(name)
+        tagDict['stockSymbol'] = getStockSymbol(name) if getStockSymbol(name) else ""
         tagDict['type'] = 'Other'
         article['tag_' +  str(([i for i,x in enumerate(analysis.keys()) if x == name])[0])] = tagDict
+
+    if len(analysis) < 10:
+        for i in range(analysis, 11):
+            article['tag_' + str(i)] = {}
+            article['tag_' + str(i)]['desc'] = ""
+            article['tag_' + str(i)]['name'] = ""
+            article['tag_' + str(i)]['stockSymbol'] = ""
+            article['tag_' + str(i)]['type'] = 'Other'
     article['sentiment'] = getSentiment(article['title'] + ' ' + article['description'])
     return article
 
@@ -192,8 +200,10 @@ def callWiki(currentWord, wikiReturn):
 
 def getDict(item):
     itemDict = {}
+    tagCount = 0
     for name, value in item.iteritems():
         if 'tag_' in name:
+            tagCount += 1
             try:
                 value = ast.literal_eval(value) if type(value) == str else value
             except Exception:
@@ -205,6 +215,14 @@ def getDict(item):
             value = "" if isnan(value) else value
         itemDict[name] = value
     itemDict['_id'] = str(itemDict['_id'])
+
+    if tagCount < 10:
+        for i in range(tagCount, 11):
+            itemDict['tag_' + str(i)] = {}
+            itemDict['tag_' + str(i)]['desc'] = ""
+            itemDict['tag_' + str(i)]['name'] = ""
+            itemDict['tag_' + str(i)]['stockSymbol'] = ""
+            itemDict['tag_' + str(i)]['type'] = 'Other'
     return itemDict
 
 def getAnalysis(newsArticle):
@@ -269,6 +287,19 @@ def headlines():
         for name, value in item.iteritems():
             if type(value) == float:
                 value = "" if isnan(value) else value
+            if "tag_" in name and value == None:
+                value = {}
+                value['desc'] = ""
+                value['name'] = ""
+                value['stockSymbol'] = ""
+                value['type'] = 'Other'
+            elif "tag_" in name and not value == None:
+                if type(value) == unicode:
+                    value = ast.literal_eval(value)
+                if value.get("stockSymbol") == None:
+                    value['stockSymbol'] = ""
+            elif not value:
+                value = ""
             itemDict[name] = value if not value == float('nan') else ""
         if itemDict['publishedAt']:
             updatedAt = datetime.strptime(itemDict['publishedAt'], '%Y-%m-%dT%H:%M:%SZ') if len(itemDict['publishedAt']) == 20 else datetime.strptime(itemDict['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
