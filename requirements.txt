@@ -62,3 +62,4 @@ wrapt==1.10.8
 yahoo-finance==1.4.0
 pymongo==3.6.1
 edgar==1.0.0
+bson==0.5.2

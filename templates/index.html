@@ -470,7 +470,7 @@
 				var cell = args.cell;
 				var row = args.row;
 				var row_data = dataView.getItem(row);  // Read from dataView not the grid data
-				var indexNumber = row_data['id'];
+				var indexNumber = row_data['_id'];
 				$.ajax({
 					type: "GET",
 					url: 'json/detail/' + indexNumber,

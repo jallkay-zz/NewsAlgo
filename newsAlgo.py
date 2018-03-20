@@ -15,6 +15,7 @@ import edgar
 import os
 import sys
 import pymongo
+from bson.objectid import ObjectId as ObjectId
 
 #init flask
 app = Flask(__name__)
@@ -23,8 +24,6 @@ app = Flask(__name__)
 newsApiKey  = '3e05eceb5b124303a021684e2152dcc5'
 #newsSources = ['the-wall-street-journal', 'the-economist', 'business-insider', 'bloomberg', 'bbc-news']
 uri = 'mongodb://jamesak:Lancaster1@ds261118.mlab.com:61118/heroku_glkl90f7'
-
-
 # stock quotes
 ts = TimeSeries(key='YWBHDJPSFY0S9FHO')
 
@@ -34,7 +33,6 @@ redirects['trumps'] = 'trump'
 
 stockSymbols = {}
 
-stockNewsIndex = {}
 initFunds = 25000.00
 
 availableTickerFunds = {} # put amount of funds remaining in here 
@@ -94,24 +92,6 @@ def nextdoor(iterable):
         current_item = next_item
     yield (prev_item, current_item, None)
 
-def buildIndex(mainDF):
-    for i in range(0, len(mainDF.values)):
-        item = mainDF.values[i]
-        try:
-            for name, value in zip(mainDF.columns, item):
-                if not type(value) == float:
-                    if 'tag_' in name and not 'None' in value:
-                        temp = ast.literal_eval(value)
-                        print(temp)
-                        if stockNewsIndex.get(temp['stockSymbol']):
-                            stockNewsIndex[temp['stockSymbol']].append(item)
-                        else:
-                            stockNewsIndex[temp['stockSymbol']] = []
-                            stockNewsIndex[temp['stockSymbol']].append(item)
-        except:
-            print("execption in building index")
-                
-
 #pull in news 
 def getNews(firstRun = False):
     newsSources = [name[2].lower() for name in stockSymbols.values]
@@ -119,7 +99,8 @@ def getNews(firstRun = False):
     print "getting news"
     noData = False
     try:
-        mainDF = pandas.DataFrame.from_csv('data.csv')
+        dbData = list(db.myCollection.find({}))
+        dbUrls = [d['url'] for d in dbData]
     except:
         noData = True
     data = {}
@@ -129,9 +110,7 @@ def getNews(firstRun = False):
 
     threading.Timer(3600, getNews).start()
     if not noData and firstRun:
-        buildIndex(mainDF)
-        return mainDF
-
+        return
 
     for source, cik in zip(newsSources, cik):
         
@@ -159,7 +138,7 @@ def getNews(firstRun = False):
                 count = count + 1
                 print('news source: %s progress: %s' % (source.title(), str(count)))
                 if not noData:
-                    for url in mainDF.url:
+                    for url in dbUrls:
                         if article['url'] == url:
                             alreadyThere = True
                             break
@@ -176,16 +155,10 @@ def getNews(firstRun = False):
             data[name][i] = value
             
     frame = pandas.DataFrame.from_dict(data)
-    
-    if not noData:
-        mainDF = mainDF.append(frame, ignore_index=True)
-    else:
-        mainDF = frame
-    mainDF.to_csv('data.csv')
+    records = json.loads(frame.T.to_json()).values()
+    db.myCollection.insert(records)
     firstRun = False
-    buildIndex(mainDF)
-    print "finished getting news"
-    return mainDF
+    print "finished getting news, and uploaded to db"
 
 def composeTag(article):
     analysis = convert(getAnalysis(article))
@@ -219,7 +192,7 @@ def callWiki(currentWord, wikiReturn):
 
 def getDict(item):
     itemDict = {}
-    for name, value in zip(mainDF.columns, item):
+    for name, value in item.iteritems():
         if 'tag_' in name:
             try:
                 value = ast.literal_eval(value) if type(value) == str else value
@@ -227,11 +200,11 @@ def getDict(item):
                 print Exception
                 continue
         if 'sentiment' in name:
-            value = ast.literal_eval(value)
             del value['compound']
         if type(value) == float:
             value = "" if isnan(value) else value
         itemDict[name] = value
+    itemDict['_id'] = str(itemDict['_id'])
     return itemDict
 
 def getAnalysis(newsArticle):
@@ -290,9 +263,10 @@ def getSentiment(content):
 def headlines():
     output = []
     counter = 0
-    for item in mainDF.values:
+    data = list(db.myCollection.find({}))
+    for item in data:
         itemDict = {}
-        for name, value in zip(mainDF.columns, item):
+        for name, value in item.iteritems():
             if type(value) == float:
                 value = "" if isnan(value) else value
             itemDict[name] = value if not value == float('nan') else ""
@@ -302,18 +276,19 @@ def headlines():
             itemDict['updatedShort'] = 'Days: ' + str(diff.days) if diff.days else 'Secs: ' + str(diff.seconds) if diff.seconds < 60 else 'Mins: ' + str(diff.seconds / 60) if diff.seconds / 60 < 60 else 'Hours: ' + str(diff.seconds / 3600)
         itemDict['source'] = itemDict['url'].split('.')[1].upper()
         itemDict['id'] = counter
+        itemDict['_id'] = str(itemDict['_id'])
         counter = counter + 1
         output.append(itemDict)
     return jsonify(output)
 
-@app.route('/json/detail/<int:mainID>')
-def detail(mainID):
-    returnData = mainDF.values[mainID]
+@app.route('/json/detail/<mongoID>')
+def detail(mongoID):
+    returnData = db.myCollection.find({"_id" : ObjectId(mongoID)})[0]
     return jsonify(getDict(returnData))
 
-@app.route('/json/detail/analysis/<int:mainID>')
-def detailAnalysis(mainID):
-    returnData = mainDF.values[mainID]
+@app.route('/json/detail/analysis/<mongoID>')
+def detailAnalysis(mongoID):
+    returnData = db.myCollection.find({"_id" : ObjectId(mongoID)})[0]
     return jsonify(getDict(returnData))
 
 @app.route('/json/total')
@@ -343,13 +318,6 @@ def moveStock(command, ticker, price, shares):
     print(response)
     return jsonify(response)
 
-    
-# @app.route('/json/mongo')
-# def mongo():
-#     records = json.loads(mainDF.T.to_json()).values()
-#     db.myCollection.insert(records)
-#     return "Successful"
-
 @app.route('/json/stock/<type>/<symbol>')
 def stock(type, symbol):
     if type == 'get_daily':
@@ -366,8 +334,14 @@ def stock(type, symbol):
         #TODO change this back 
         core = ts.get_intraday(symbol, interval='1min', outputsize='full')
 
-        if stockNewsIndex.get(symbol):
-            timestamps = [datetime.strptime(item[2], "%Y-%m-%dT%H:%M:%SZ") for item in stockNewsIndex.get(symbol)]
+        data = list(db.myCollection.find({ "$or": [ { "tag_0.stockSymbol" : symbol }, { "tag_1.stockSymbol" : symbol },
+                                                    { "tag_2.stockSymbol" : symbol }, { "tag_3.stockSymbol" : symbol },
+                                                    { "tag_4.stockSymbol" : symbol }, { "tag_5.stockSymbol" : symbol },
+                                                    { "tag_6.stockSymbol" : symbol }, { "tag_7.stockSymbol" : symbol },
+                                                    { "tag_8.stockSymbol" : symbol }, { "tag_9.stockSymbol" : symbol },
+                                                    { "tag_10.stockSymbol" : symbol }]}))
+        if len(data) > 0:
+            timestamps = [datetime.strptime(i['publishedAt'], "%Y-%m-%dT%H:%M:%SZ") for i in data]
 
         for name, value in core[0].iteritems():
             priceTime = datetime.strptime(name, "%Y-%m-%d %H:%M:%S")
@@ -382,7 +356,7 @@ def stock(type, symbol):
                     
 
             output['quote'][name]           = value["1. open"]
-            output['label'][name]           = [stockNewsIndex.get(symbol)[timestamps.index(stamp)][14], name] if success else name
+            output['label'][name]           = [data[timestamps.index(stamp)]['title'], name] if success else name
             output['pointStyle'][name]      = "circle"
             output['backgroundColor'][name] = 'rgb(193, 0, 0)' if success else 'rgb(225,225,225)'
             output['radius'][name]          = "8" if success else "1"
@@ -394,19 +368,19 @@ def index():
     return render_template('index.html', header="")
 
 # ONLY USE WHEN YOURE OVERRITING THE CSV
-@app.route('/json/all')
-def getAllData():
-    mainDict = []
-    progress = 0
-    for rawItem in mainDF.values:
-        progress = progress + 1
-        print 'progress: ' + str(progress)
-        item = getDict(rawItem)
-        mainDict.append(composeTag(item))
+# @app.route('/json/all')
+# def getAllData():
+#     mainDict = []
+#     progress = 0
+#     for rawItem in mainDF.values:
+#         progress = progress + 1
+#         print 'progress: ' + str(progress)
+#         item = getDict(rawItem)
+#         mainDict.append(composeTag(item))
     
-    frame = pandas.DataFrame.from_dict(mainDict)
-    frame.to_csv('data.csv')
-    return jsonify(mainDict)
+#     frame = pandas.DataFrame.from_dict(mainDict)
+#     frame.to_csv('data.csv')
+#     return jsonify(mainDict)
     
 
 if __name__ == "__main__":
@@ -414,7 +388,7 @@ if __name__ == "__main__":
     splitTickerfunds()
     client = pymongo.MongoClient(uri)
     db = client.get_default_database()
-    mainDF       = getNews(firstRun=True)
+    getNews(firstRun = True)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
     
