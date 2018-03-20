@@ -165,8 +165,8 @@ def composeTag(article):
     article['tags'] = ''.join(str(a) + ',' for a in analysis.keys())
     for name, desc in analysis.iteritems():
         tagDict = {}
-        tagDict['desc'] = desc
-        tagDict['name'] = name
+        tagDict['desc'] = desc if desc else ""
+        tagDict['name'] = name if name else ""
         tagDict['stockSymbol'] = getStockSymbol(name)
         tagDict['type'] = 'Other'
         article['tag_' +  str(([i for i,x in enumerate(analysis.keys()) if x == name])[0])] = tagDict
