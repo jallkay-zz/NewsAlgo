@@ -1,26 +1,26 @@
 full_ticker,ticker,issuerName,issuerNameShort,sector,subsector,ipo,location,cik
-NASDAQ:FB,FB,"Facebook, Inc.",Facebook,Technology,"Computer Software: Programming, Data Processing",2012,NASDAQ,0001326801
-NASDAQ:MSFT,MSFT,Microsoft Corporation,Microsoft,Technology,Computer Software: Prepackaged Software,1986,NASDAQ,0000789019
-NYSE:SNAP,SNAP,Snap Inc.,Snap,Technology,"Computer Software: Programming, Data Processing",2017,NYSE,0001564408
-NASDAQ:TSLA,TSLA,"Tesla, Inc. ",Tesla,Capital Goods,Auto Manufacturing,2010,NASDAQ,0001318605
-NYSE:XOM,XOM,Exxon Mobil Corporation,Exxon Mobil,Energy,Integrated oil Companies,n/a,NYSE,0000034088
-NYSE:JPM,JPM,J P Morgan Chase & Co,JP Morgan,Finance,Major Banks,n/a,NYSE,0000019617
-NYSE:MCD,MCD,McDonalds Corporation,McDonalds,Consumer Services,Restaurants,n/a,NYSE,0000063908
-NYSE:UPS,UPS,"United Parcel Service, Inc.",UPS,Transportation,Trucking Freight/Courier Services,1999,NYSE,0001090727
-NYSE:MT,MT,ArcelorMittal,ArcelorMittal,Basic Industries,Steel/Iron Ore,n/a,NYSE,0001243429
-NYSE:BA,BA,Boeing Company (The),Boeing,Capital Goods,Aerospace,n/a,NYSE,0000012927
-NYSE:GM,GM,General Motors Company,General Motors,Capital Goods,Auto Manufacturing,2010,NYSE,0001467858
-NYSE:RL,RL,Ralph Lauren Corporation,Ralph Lauren,Consumer Non-Durables,Apparel,1997,NYSE,0001037038
-NASDAQ:INTC,INTC,Intel Corporation,Intel,Technology,Semiconductors,n/a,NASDAQ,0000050863
-NYSE:JNJ,JNJ,Johnson & Johnson,Johnson & Johnson,Health Care,Major Pharmaceuticals,n/a,NYSE,0000200406
-NYSE:GE,GE,General Electric Company,General Electric,Energy,Consumer Electronics/Appliances,n/a,NYSE,0000040545
-NYSE:GS,GS,"Goldman Sachs Group, Inc. (The)",Goldman Sachs,Finance,Investment Bankers/Brokers/Service,1999,NYSE,0000886982
-NYSE:BRK.A,BRK.A,Berkshire Hathaway Inc.,Berkshire Hathaway,Finance,Investment Management,n/a,NYSE,0001067983
-NASDAQ:AMZN,AMZN,"Amazon.com, Inc.",Amazon,Consumer Services,Catalog/Specialty Distribution,1997,NASDAQ,0001018724
-NYSE:TRI,TRI,Thomson Reuters Corp,Reuters,Consumer Services,Publishing,n/a,NYSE,0001075124
-NYSE:UL,UL,Unilever PLC,Unilever,Basic Industries,Package Goods/Cosmetics,n/a,NYSE,0000217410
-NYSE:KO,KO,Coca-Cola Company (The),Coca-Cola,Consumer Non-Durables,Beverages (Production/Distribution),n/a,NYSE,0000021344
-NYSE:NKE,NKE,"Nike, Inc.",Nike,Consumer Non-Durables,Shoe Manufacturing,n/a,NYSE,0000320187
-NYSE:GSK,GSK,GlaxoSmithKline PLC,GlaxoSmithKline,Health Care,Major Pharmaceuticals,n/a,NYSE,0001131399
-NYSE:FDX,FDX,FedEx Corporation,FedEx,Transportation,Air Freight/Delivery Services,n/a,NYSE,0001048911
-NASDAQ:GOOGL,GOOGL,Alphabet Inc.,Alphabet,Technology,"Computer Software: Programming, Data Processing",n/a,NASDAQ,0001652044
+NASDAQ:FB,FB,"Facebook, Inc.",Facebook,Technology,"Computer Software: Programming, Data Processing",2012,NASDAQ,1326801
+NASDAQ:MSFT,MSFT,Microsoft Corporation,Microsoft,Technology,Computer Software: Prepackaged Software,1986,NASDAQ,789019
+NYSE:SNAP,SNAP,Snap Inc.,Snap,Technology,"Computer Software: Programming, Data Processing",2017,NYSE,1564408
+NASDAQ:TSLA,TSLA,"Tesla, Inc. ",Tesla,Capital Goods,Auto Manufacturing,2010,NASDAQ,1318605
+NYSE:XOM,XOM,Exxon Mobil Corporation,Exxon Mobil,Energy,Integrated oil Companies,n/a,NYSE,34088
+NYSE:JPM,JPM,J P Morgan Chase & Co,JP Morgan,Finance,Major Banks,n/a,NYSE,19617
+NYSE:MCD,MCD,McDonalds Corporation,McDonalds,Consumer Services,Restaurants,n/a,NYSE,63908
+NYSE:UPS,UPS,"United Parcel Service, Inc.",UPS,Transportation,Trucking Freight/Courier Services,1999,NYSE,1090727
+NYSE:AA,AA,Alcoa,Alcoa,Basic Industries,Steel/Iron Ore,n/a,NYSE,1675149
+NYSE:BA,BA,Boeing Company (The),Boeing,Capital Goods,Aerospace,n/a,NYSE,12927
+NYSE:GM,GM,General Motors Company,General Motors,Capital Goods,Auto Manufacturing,2010,NYSE,1467858
+NYSE:RL,RL,Ralph Lauren Corporation,Ralph Lauren,Consumer Non-Durables,Apparel,1997,NYSE,1037038
+NASDAQ:INTC,INTC,Intel Corporation,Intel,Technology,Semiconductors,n/a,NASDAQ,50863
+NYSE:JNJ,JNJ,Johnson & Johnson,Johnson & Johnson,Health Care,Major Pharmaceuticals,n/a,NYSE,200406
+NYSE:GE,GE,General Electric Company,General Electric,Energy,Consumer Electronics/Appliances,n/a,NYSE,40545
+NYSE:GS,GS,"Goldman Sachs Group, Inc. (The)",Goldman Sachs,Finance,Investment Bankers/Brokers/Service,1999,NYSE,886982
+NYSE:BRK.A,BRK.A,Berkshire Hathaway Inc.,Berkshire Hathaway,Finance,Investment Management,n/a,NYSE,1067983
+NASDAQ:AMZN,AMZN,"Amazon.com, Inc.",Amazon,Consumer Services,Catalog/Specialty Distribution,1997,NASDAQ,1018724
+NASDAQ:FOXA,FOXA,Twenty-First Century Fox,Twenty-First Century Fox,Consumer Services,Publishing,n/a,NASDAQ,1308161
+NASDAQ:MDLZ,MDLZ,"Mondelez International, Inc.",Mondelez,Basic Industries,Package Goods/Cosmetics,n/a,NASDAQ,1103982
+NYSE:KO,KO,Coca-Cola Company (The),Coca-Cola,Consumer Non-Durables,Beverages (Production/Distribution),n/a,NYSE,21344
+NYSE:NKE,NKE,"Nike, Inc.",Nike,Consumer Non-Durables,Shoe Manufacturing,n/a,NYSE,320187
+NYSE:PFE,PFE,"Pfizer, Inc.",Pfizer,Health Care,Major Pharmaceuticals,n/a,NYSE,78003
+NYSE:FDX,FDX,FedEx Corporation,FedEx,Transportation,Air Freight/Delivery Services,n/a,NYSE,1048911
+NASDAQ:GOOGL,GOOGL,Alphabet Inc.,Alphabet,Technology,"Computer Software: Programming, Data Processing",n/a,NASDAQ,1652044
