@@ -138,7 +138,7 @@ def getQuaterly():
     newsSources = [name[2].lower() for name in stockSymbols.values]
     tickers = [name[0].upper() for name in stockSymbols.values]
     cik = [name[7] for name in stockSymbols.values]
-    records = {}
+    
     for source, cik, ticker in zip(newsSources, cik, tickers):
         if '.' in ticker:
             ticker = ticker.replace('.', '')
@@ -158,16 +158,17 @@ def getQuaterly():
         print("Got papers from %s %s" % (source, ticker))
         sentiments = [getSentiment(pap) for pap in papers]
         print("Got sentiments from %s %s" % (source, ticker))
-        records[ticker] = {}
+        records = {}
         for d, p, s in zip(dates, papers, sentiments):
             
-            records[ticker][d] = {}
-            records[ticker][d]["paper"] = p
-            records[ticker][d]["sentiment"] = s
-        # records = docs
-    print("adding records to quarterly db")
-    db.quaterly.insert(records)
-    print("added records to quarterly db, amending flag to not run again")
+            records["ticker"]    = ticker
+            records["date"]      = d
+            records["paper"]     = p
+            records["sentiment"] = s
+
+            print("adding record %s to quarterly db" % ticker)
+            db.quaterly.insert(records)
+    print("added all records to quarterly db, amending flag to not run again")
     gotQuarterly = True
 
 
