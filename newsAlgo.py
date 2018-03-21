@@ -41,7 +41,7 @@ availableTickerFunds = {} # put amount of funds remaining in here
 shareTicker = {} # put num of shares owned per ticker in here
 
 overrideData = True
-
+gotQuarterly = False
 splits = [('.s', 'D'), ("'s", 'D'), ('Inc', 'K')]
 
 def splitTickerfunds():
@@ -96,35 +96,42 @@ def nextdoor(iterable):
 
 #pull in news 
 
-def getDates(papers):
+def getDates(tree, numOfDocs):
     dates = []
-    for paper in papers:
 
-        if paper[10] == '-': # FACEBOOK
-            myDate = paper[11:19].replace('x', '')
-            if len(myDate) == 7:
-                myDate = "0" + myDate
-            dateFull = datetime.strptime(myDate, "%m%d%Y").strftime("%Y%m%d")
-        elif paper[16] == "_": # MICROSOFT, SNAP, TESLA
-            dateFull = paper[17:25] 
+    if len(tree.body[11]) > 5: # Check if filings exist
+        if len(tree.body[11][5][0]) -1 < numOfDocs: # Check if there are enough filings
+            numOfDocs = len(tree.body[11][5][0]) -1
+            print("Not enough docs to return, returning %i" % numOfDocs)
+        for i in range(1, numOfDocs + 1):
+            myDate = tree.body[11][5][0][i][3].text_content() # Pull date from DOM
+            print myDate
+            dates.append(myDate)
+        # if paper[10] == '-': # FACEBOOK
+        #     myDate = paper[11:19].replace('x', '')
+        #     if len(myDate) == 7:
+        #         myDate = "0" + myDate
+        #     dateFull = datetime.strptime(myDate, "%m%d%Y").strftime("%Y%m%d")
+        # elif paper[16] == "_": # MICROSOFT, SNAP, TESLA
+        #     dateFull = paper[17:25] 
 
-        elif paper[8:14] == "xom10q": # EXXON MOBIL
-            month = str(3 * int(paper[14]))
-            month = "0" + month if len(month) == 1 else month
-            year = paper[16:20]
-            day = "30"
-            dateFull = year + month + day
-        elif paper[8:12] == "corp": # JP Morgan
-            month = str(3 * int(paper[13]))
-            month = "0" + month if len(month) == 1 else month
-            year = paper[14:18]
-            day = "30"
-            dateFull = year + month + day
-        else: # fallback to previous date - 3 months
-            dateFull = (datetime.strptime(dateFull, "%Y%m%d") - relativedelta(months =+3)).strftime("%Y%m%d")
+        # elif paper[8:14] == "xom10q": # EXXON MOBIL
+        #     month = str(3 * int(paper[14]))
+        #     month = "0" + month if len(month) == 1 else month
+        #     year = paper[16:20]
+        #     day = "30"
+        #     dateFull = year + month + day
+        # elif paper[8:12] == "corp": # JP Morgan
+        #     month = str(3 * int(paper[13]))
+        #     month = "0" + month if len(month) == 1 else month
+        #     year = paper[14:18]
+        #     day = "30"
+        #     dateFull = year + month + day
+        # else: # fallback to previous date - 3 months
+        #     dateFull = (datetime.strptime(dateFull, "%Y%m%d") - relativedelta(months =+3)).strftime("%Y%m%d")
 
     
-    return dates
+        return dates
 
 def getQuaterly():
     #10-Q filings - to be ran only ever few weeks or during close times?
@@ -133,38 +140,42 @@ def getQuaterly():
     cik = [name[7] for name in stockSymbols.values]
     records = {}
     for source, cik, ticker in zip(newsSources, cik, tickers):
-
+        if '.' in ticker:
+            ticker = ticker.replace('.', '')
         ciklen = len(str(int(cik))) 
         if not ciklen == 10:
             newcik = ""
             for i in range (0, 10-ciklen):
                 newcik += "0"
         cik = newcik + str(cik)
-
+        
         company = edgar.Company(source, cik)
         tree = company.getAllFilings(filingType = "10-Q")
         docs = edgar.getDocuments(tree, noOfDocuments=5)
         papers = [''.join(doc) for doc in docs]
         papers = [unicodedata.normalize("NFKD", pap) for pap in papers]
-        dates = getDates(papers)
+        dates = getDates(tree, 5)
         print("Got papers from %s %s" % (source, ticker))
         sentiments = [getSentiment(pap) for pap in papers]
         print("Got sentiments from %s %s" % (source, ticker))
-        records[source] = {}
+        records[ticker] = {}
         for d, p, s in zip(dates, papers, sentiments):
+            
             records[ticker][d] = {}
             records[ticker][d]["paper"] = p
             records[ticker][d]["sentiment"] = s
         # records = docs
     print("adding records to quarterly db")
     db.quaterly.insert(records)
+    print("added records to quarterly db, amending flag to not run again")
+    gotQuarterly = True
 
 
 def getNews(firstRun = False):
     newsSources = [name[2].lower() for name in stockSymbols.values]
     print "getting news"
     noData = False
-    getQuaterly()
+    
     try:
         dbData = list(db.myCollection.find({}))
         dbUrls = [d['url'] for d in dbData]
@@ -178,6 +189,9 @@ def getNews(firstRun = False):
     threading.Timer(3600, getNews).start()
     if not noData and firstRun:
         return
+
+    if not gotQuarterly:
+        getQuaterly()
 
     for source in newsSources:
 
