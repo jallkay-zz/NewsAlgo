@@ -158,16 +158,17 @@ def getQuaterly():
         print("Got papers from %s %s" % (source, ticker))
         sentiments = [getSentiment(pap) for pap in papers]
         print("Got sentiments from %s %s" % (source, ticker))
-        records = {}
-        for d, p, s in zip(dates, papers, sentiments):
-            
-            records["ticker"]    = ticker
-            records["date"]      = d
-            records["paper"]     = p
-            records["sentiment"] = s
+        
+        for d, s in zip(dates, sentiments):
+            records = {}
+            data = list(db.quaterly.find({ "ticker" : ticker, "date" : d}))
+            if not len(data) > 0:
+                records["ticker"]    = ticker
+                records["date"]      = d
+                records["sentiment"] = s
 
-            print("adding record %s to quarterly db" % ticker)
-            db.quaterly.insert(records)
+                print("adding record %s %s to quarterly db" % (d, ticker))
+                db.quaterly.insert(records)
     print("added all records to quarterly db, amending flag to not run again")
     gotQuarterly = True
 
@@ -491,7 +492,7 @@ if __name__ == "__main__":
     splitTickerfunds()
     client = pymongo.MongoClient(uri)
     db = client.get_default_database()
-    getNews(firstRun = True)
+    getNews(firstRun = False)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
     
