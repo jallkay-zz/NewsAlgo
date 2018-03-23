@@ -385,6 +385,51 @@ def headlines():
         output.append(itemDict)
     return jsonify(output)
 
+
+@app.route('/json/headlines/<filter>')
+def headlinesFilter(filter):
+    if filter == "stocks":
+        data = list(db.myCollection.find({"$or": [{ "tag_0.stockSymbol": { "$exists": True, "$ne": None } }, { "tag_1.stockSymbol": { "$exists": True, "$ne": None } },
+                                                  { "tag_2.stockSymbol": { "$exists": True, "$ne": None } }, { "tag_3.stockSymbol": { "$exists": True, "$ne": None } },
+                                                  { "tag_4.stockSymbol": { "$exists": True, "$ne": None } }, { "tag_5.stockSymbol": { "$exists": True, "$ne": None } },
+                                                  { "tag_6.stockSymbol": { "$exists": True, "$ne": None } }, { "tag_7.stockSymbol": { "$exists": True, "$ne": None } },
+                                                  { "tag_8.stockSymbol": { "$exists": True, "$ne": None } }, { "tag_9.stockSymbol": { "$exists": True, "$ne": None } },
+                                                  { "tag_10.stockSymbol": { "$exists": True, "$ne": None } } ] }))
+    else:
+        data = list(db.myCollection.find({}))
+    output = []
+    counter = 0
+    
+    for item in data:
+        itemDict = {}
+        for name, value in item.iteritems():
+            if type(value) == float:
+                value = "" if isnan(value) else value
+            if "tag_" in name and value == None:
+                value = {}
+                value['desc'] = ""
+                value['name'] = ""
+                value['stockSymbol'] = ""
+                value['type'] = 'Other'
+            elif "tag_" in name and not value == None:
+                if type(value) == unicode:
+                    value = ast.literal_eval(value)
+                if value.get("stockSymbol") == None:
+                    value['stockSymbol'] = ""
+            elif not value:
+                value = ""
+            itemDict[name] = value if not value == float('nan') else ""
+        if itemDict['publishedAt']:
+            updatedAt = datetime.strptime(itemDict['publishedAt'], '%Y-%m-%dT%H:%M:%SZ') if len(itemDict['publishedAt']) == 20 else datetime.strptime(itemDict['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            diff = datetime.utcnow() - updatedAt
+            itemDict['updatedShort'] = 'Days: ' + str(diff.days) if diff.days else 'Secs: ' + str(diff.seconds) if diff.seconds < 60 else 'Mins: ' + str(diff.seconds / 60) if diff.seconds / 60 < 60 else 'Hours: ' + str(diff.seconds / 3600)
+        itemDict['source'] = itemDict['url'].split('.')[1].upper()
+        itemDict['id'] = counter
+        itemDict['_id'] = str(itemDict['_id'])
+        counter = counter + 1
+        output.append(itemDict)
+    return jsonify(output)
+
 @app.route('/json/detail/<mongoID>')
 def detail(mongoID):
     returnData = db.myCollection.find({"_id" : ObjectId(mongoID)})[0]
