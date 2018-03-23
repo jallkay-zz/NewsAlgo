@@ -12,6 +12,7 @@ import wikipedia as wiki
 from collections import OrderedDict
 import pandas
 import edgar
+from math import floor
 import os
 import sys
 import pymongo
@@ -73,6 +74,11 @@ def getStockSymbol(companyName):
             return name[0]
         elif companyName.lower() in name[2].lower():
             return name[0]
+
+def getCompanyName(stockSymbol):
+    for name in stockSymbols.values:
+        if stockSymbol.lower() == name[0].lower():
+            return name[2]
 
 def convert(input):
     if isinstance(input, dict):
@@ -430,14 +436,58 @@ def headlinesFilter(filter):
         output.append(itemDict)
     return jsonify(output)
 
+@app.route('/json/quarterly')
+def quaterlyReports():
+    data = list(db.quaterly.find({}))
+    output = []
+    for item in data:
+        
+        quarter = str(int((floor(float(item['date'].split('-')[1]) / 4))) + 1)
+        year    = str(item['date'].split('-')[0])
+        item['source'] = item['ticker']
+        item['_id'] = str(item['_id'])
+        item['id'] = item['_id']
+        item['title'] = "Q" + quarter + " Report " + year
+        item['updatedShort'] = "Q" + quarter + " " + year
+
+        output.append(item)
+    return jsonify(output)
+
 @app.route('/json/detail/<mongoID>')
 def detail(mongoID):
-    returnData = db.myCollection.find({"_id" : ObjectId(mongoID)})[0]
+    returnData = list(db.myCollection.find({"_id" : ObjectId(mongoID)}))
+    if len(returnData) > 0:
+        returnData = returnData[0]
+    else:
+        returnData = db.quaterly.find({"_id" : ObjectId(mongoID)})[0]
+        quarter = str(int((floor(float(returnData['date'].split('-')[1]) / 4))) + 1)
+        year    = str(returnData['date'].split('-')[0])
+        returnData['source'] = returnData['ticker']
+        returnData['_id'] = str(returnData['_id'])
+        returnData['id'] = returnData['_id']
+        returnData['title'] = "Q" + quarter + " Report " + year
+        returnData['updatedShort'] = "Q" + quarter + " " + year
+
     return jsonify(getDict(returnData))
 
 @app.route('/json/detail/analysis/<mongoID>')
 def detailAnalysis(mongoID):
-    returnData = db.myCollection.find({"_id" : ObjectId(mongoID)})[0]
+    returnData = list(db.myCollection.find({"_id" : ObjectId(mongoID)}))
+    if len(returnData) > 0:
+        returnData = returnData[0]
+    else:
+        returnData = db.quaterly.find({"_id" : ObjectId(mongoID)})[0]
+        quarter = str(int((floor(float(returnData['date'].split('-')[1]) / 4))) + 1)
+        year    = str(returnData['date'].split('-')[0])
+        company = getCompanyName(returnData['ticker'])
+        returnData['source'] = company
+        returnData['_id'] = str(returnData['_id'])
+        returnData['id'] = returnData['_id']
+        returnData['title'] = "Q" + quarter + " Report " + year
+        returnData['updatedShort'] = "Q" + quarter + " " + year
+        returnData['tag_0'] = { "name" : company, "stockSymbol" : returnData['ticker'] }
+        returnData['tags'] = company + ','
+        
     return jsonify(getDict(returnData))
 
 @app.route('/json/total')
@@ -480,18 +530,39 @@ def stock(type, symbol):
         output['label'] = {}
         output['backgroundColor'] = {}
         output['radius'] = {}
+        success = False
+        quarterlySuccess = False
         #TODO change this back 
         core = ts.get_intraday(symbol, interval='1min', outputsize='full')
 
-        data = list(db.myCollection.find({ "$or": [ { "tag_0.stockSymbol" : symbol }, { "tag_1.stockSymbol" : symbol },
+        headlineData = list(db.myCollection.find({ "$or": [ { "tag_0.stockSymbol" : symbol }, { "tag_1.stockSymbol" : symbol },
                                                     { "tag_2.stockSymbol" : symbol }, { "tag_3.stockSymbol" : symbol },
                                                     { "tag_4.stockSymbol" : symbol }, { "tag_5.stockSymbol" : symbol },
                                                     { "tag_6.stockSymbol" : symbol }, { "tag_7.stockSymbol" : symbol },
                                                     { "tag_8.stockSymbol" : symbol }, { "tag_9.stockSymbol" : symbol },
                                                     { "tag_10.stockSymbol" : symbol }]}))
-        if len(data) > 0:
-            timestamps = [datetime.strptime(i['publishedAt'], "%Y-%m-%dT%H:%M:%SZ") for i in data]
 
+        rawQuarterlyData = list(db.quaterly.find({ "ticker" : symbol }))
+        quarterlyData = []
+        for item in rawQuarterlyData:
+            quarter = str(int((floor(float(item['date'].split('-')[1]) / 4))) + 1)
+            year    = str(item['date'].split('-')[0])
+            item['source'] = item['ticker']
+            item['_id'] = str(item['_id'])
+            item['id'] = item['_id']
+            item['title'] = "Q" + quarter + " Report " + year
+            item['updatedShort'] = "Q" + quarter + " " + year
+            quarterlyData.append(item)
+
+
+        if len(headlineData) > 0:
+            timestamps = [datetime.strptime(i['publishedAt'], "%Y-%m-%dT%H:%M:%SZ") for i in headlineData]
+        else:
+            timestamps = []
+        if len(quarterlyData) > 0:
+            quarterlyTimestamps = [datetime.strptime(i['date'], "%Y-%m-%d") for i in quarterlyData]
+        else:
+            quarterlyTimestamps = []
         for name, value in core[0].iteritems():
             priceTime = datetime.strptime(name, "%Y-%m-%d %H:%M:%S")
             if timestamps:
@@ -502,13 +573,38 @@ def stock(type, symbol):
                         break
                     else:
                         success = False
+            if quarterlyTimestamps:
+                for myStamp in quarterlyTimestamps:
+                    compare = priceTime - myStamp if priceTime > myStamp else stamp - priceTime
+                    if timedelta(hours = 24) > compare:
+                        quarterlySuccess = True
+                        break
+                    else:
+                        quarterlySuccess = False
                     
+            if success:
+                label = [headlineData[timestamps.index(stamp)]['title'], name]
+                color = 'rgb(193, 0, 0)'
+                radius = "8"
+                del headlineData[timestamps.index(stamp)]
+                del timestamps[timestamps.index(stamp)]
+
+            elif quarterlySuccess:
+                label = [quarterlyData[quarterlyTimestamps.index(myStamp)]['title'], name]
+                color = 'rgb(0,0,0)'
+                radius = "8"
+                del quarterlyData[quarterlyTimestamps.index(myStamp)]
+                del quarterlyTimestamps[quarterlyTimestamps.index(myStamp)]
+            else:
+                label = name
+                color = 'rgb(225,225,225)'
+                radius = "1"
 
             output['quote'][name]           = value["1. open"]
-            output['label'][name]           = [data[timestamps.index(stamp)]['title'], name] if success else name
+            output['label'][name]           = label
             output['pointStyle'][name]      = "circle"
-            output['backgroundColor'][name] = 'rgb(193, 0, 0)' if success else 'rgb(225,225,225)'
-            output['radius'][name]          = "8" if success else "1"
+            output['backgroundColor'][name] = color
+            output['radius'][name]          = radius
         return jsonify(output)
 
 

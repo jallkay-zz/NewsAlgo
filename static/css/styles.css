@@ -388,6 +388,11 @@ input[type="checkbox"].options:checked {
   padding-right: 0;
 }
 
+.options-item {
+  display: inline-block;
+  width: 100%;
+}
+
 
 
 .clear-menu-btn input[type="checkbox"]:hover { cursor: pointer; }

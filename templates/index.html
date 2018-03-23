@@ -66,7 +66,13 @@
 																							<span class="bottom"></span>
 																							<span class="circle"></span>
 																						</div><hr style="margin-bottom: 0px;">
-																						<div class="options-main" style="display:none"><p>Filter only detected stocks</p><input class="options" id="filter-stocks" type="checkbox" onchange="changefilters()"></div>
+																						<div class="options-main" style="display:none">
+																							<div class="options-item">
+																								<p>Filter only detected stocks</p><input class="options" id="filter-stocks" type="checkbox" onchange="changefilters()">
+																							</div>
+																							<div class="options-item">
+																								<p>Show Quarterly Reports Only</p><input class="options" id="filter-quarterly" type="checkbox" onchange="changefilters()"></div>
+																							</div>
 																					</div>
 																				</div>
 																				<div id="myGrid" style="height:571px;width:auto;"></div>
@@ -270,10 +276,15 @@
 				});
 			}
 			function getHeadlines(filters = "") {
-
+				if(filters != "quarterly") {
+					var myurl = 'json/headlines' + filters;
+				}
+				else {
+					var myurl = 'json/' + filters;
+				}
 				$.ajax({
 					type: "GET",
-					url: 'json/headlines' + filters,
+					url:  myurl,
 					dataType: 'json',
 					success: function (data) {
 						dataView = new Slick.Data.DataView({inlineFilters: true});
@@ -566,16 +577,22 @@
 			};
 
 			function changefilters() {
-
-				var checkBox = document.getElementById("filter-stocks");
-				if(checkBox.checked == true) {
-					getHeadlines('/stocks');
+				
+				
+				var quarterlyCheckBox = document.getElementById("filter-quarterly");
+				if(quarterlyCheckBox.checked == true) {
+					getHeadlines('quarterly');
 				}
 				else {
-					getHeadlines();
+					var checkBox = document.getElementById("filter-stocks");
+					if(checkBox.checked == true) {
+						getHeadlines('/stocks');
+					}
+					else {
+						getHeadlines();
+					}
 				}
 
-				
 			}
 			
 			function changeoptions(obj) {
