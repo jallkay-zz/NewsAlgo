@@ -198,8 +198,8 @@ def getNews(firstRun = False):
     if not noData and firstRun:
         return
 
-    if not gotQuarterly:
-        getQuaterly()
+    #if not gotQuarterly:
+    #    getQuaterly()
 
     for source in newsSources:
 
@@ -249,7 +249,7 @@ def composeTag(article):
         article['tag_' +  str(([i for i,x in enumerate(analysis.keys()) if x == name])[0])] = tagDict
 
     if len(analysis) < 10:
-        for i in range(analysis, 11):
+        for i in range(len(analysis), 11):
             article['tag_' + str(i)] = {}
             article['tag_' + str(i)]['desc'] = ""
             article['tag_' + str(i)]['name'] = ""
@@ -633,7 +633,7 @@ if __name__ == "__main__":
     splitTickerfunds()
     client = pymongo.MongoClient(uri)
     db = client.get_default_database()
-    getNews(firstRun = True)
+    getNews(firstRun = False)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
     
