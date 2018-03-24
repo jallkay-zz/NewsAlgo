@@ -152,6 +152,7 @@
 																							<span class="bottom"></span>
 																							<span class="circle"></span>
 																						</div><hr style="margin-bottom: 0px;">
+																						<div class="message-feed"></div>
 																					</div>
 																				</div>
 																				</li>
@@ -220,6 +221,7 @@
 			var percentCompleteThreshold = 0;
 			var searchString = "";
 			updateTotal();
+			updateMessages();
 
 			function requiredFieldValidator(value) {
 				if (value == null || value == undefined || !value.length) {
@@ -275,6 +277,21 @@
 					}
 				});
 			}
+
+			function updateMessages() {
+				$.ajax({
+					type: "GET",
+					url: 'json/messages',
+					dataType: 'json',
+					success: function (data) {
+						$('.message-feed')[0].innerHTML = data;
+					},
+					complete: function() {
+						setTimeout(updateMessages, 60000)
+					}
+				});
+			}
+
 			function getHeadlines(filters = "") {
 				if(filters != "quarterly") {
 					var myurl = 'json/headlines' + filters;

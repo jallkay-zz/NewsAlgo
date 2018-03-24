@@ -38,6 +38,8 @@ stockSymbols = {}
 
 initFunds = 25000.00
 
+currentMessage = ""
+
 availableTickerFunds = {} # put amount of funds remaining in here 
 shareTicker = {} # put num of shares owned per ticker in here
 
@@ -57,6 +59,7 @@ def buyStock(ticker, price, shares):
     if requestedFunds < availableFunds:
         availableTickerFunds[ticker] -= requestedFunds
         shareTicker[ticker] += shares
+        currentMessage = "BOUGHT %f of %s at %f amount available %f" % (shares, ticker, price, availableTickerFunds[ticker])
         return "BOUGHT %f of %s at %f amount available %f" % (shares, ticker, price, availableTickerFunds[ticker])
     
 def sellStock(ticker, price, shares):
@@ -66,6 +69,7 @@ def sellStock(ticker, price, shares):
     if investedShares >= shares:
         availableTickerFunds[ticker] += requestedFunds
         shareTicker[ticker] -= shares
+        currentMessage = "SOLD %f of %s at %f amount available %f" % (shares, ticker, price, availableTickerFunds[ticker])
         return "SOLD %f of %s at %f amount available %f" % (shares, ticker, price, availableTickerFunds[ticker])
 
 def getStockSymbol(companyName):
@@ -161,7 +165,9 @@ def getQuaterly():
                     records["sentiment"] = s
 
                     print("adding record %s %s to quarterly db" % (d, ticker))
+                    currentMessage = "adding record %s %s to quarterly db" % (d, ticker)
                     db.quaterly.insert(records)
+    currentMessage = "added all records to quarterly db, amending flag to not run again"
     print("added all records to quarterly db, amending flag to not run again")
     gotQuarterly = True
 
@@ -185,6 +191,7 @@ def getNews(firstRun = False):
 
     if not gotQuarterly:
         getQuaterly()
+         
 
     for source in newsSources:
 
@@ -223,7 +230,8 @@ def getNews(firstRun = False):
     # records = json.loads(frame.T.to_json()).values()
     # db.myCollection.insert(records)
     firstRun = False
-    print "finished getting news, and uploaded to db"
+    currentMessage = "Finished updating news content, uploaded to db"
+    print "Finished updating news content, uploaded to db"
 
 def composeTag(article):
     analysis = convert(getAnalysis(article))
@@ -480,6 +488,10 @@ def detailAnalysis(mongoID):
         returnData['tags'] = company + ','
         
     return jsonify(getDict(returnData))
+
+@app.route('/json/messages')
+def getMessages():
+    return jsonify(currentMessage)
 
 @app.route('/json/total')
 def getTotal():
