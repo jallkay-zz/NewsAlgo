@@ -209,9 +209,7 @@ def getNews(firstRun = False):
 
                 if myData:
                     print("added article from %s to data" % source)
-                    frame = pandas.DataFrame.from_dict(myData)
-                    records = json.loads(frame.T.to_json()).values()
-                    db.myCollection.insert(records)
+                    db.myCollection.insert(myData)
                 
 
     # for i in range(len(rawData)):
@@ -356,15 +354,18 @@ def headlines():
         for name, value in item.iteritems():
             if type(value) == float:
                 value = "" if isnan(value) else value
-            if "tag_" in name and value == None:
+            if "tag_" in name and value == None or "tag_" in name and value == "":
                 value = {}
                 value['desc'] = ""
                 value['name'] = ""
                 value['stockSymbol'] = ""
                 value['type'] = 'Other'
-            elif "tag_" in name and not value == None:
+            elif "tag_" in name and not value == None or "tag_" in name and not value == '':
                 if type(value) == unicode:
-                    value = ast.literal_eval(value)
+                    try:
+                        value = ast.literal_eval(value)
+                    except:
+                        print value
                 if value.get("stockSymbol") == None:
                     value['stockSymbol'] = ""
             elif not value:
