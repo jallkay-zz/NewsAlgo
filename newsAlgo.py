@@ -38,7 +38,7 @@ stockSymbols = {}
 
 initFunds = 25000.00
 
-currentMessage = ""
+currentMessage = []
 
 availableTickerFunds = {} # put amount of funds remaining in here 
 shareTicker = {} # put num of shares owned per ticker in here
@@ -59,7 +59,7 @@ def buyStock(ticker, price, shares):
     if requestedFunds < availableFunds:
         availableTickerFunds[ticker] -= requestedFunds
         shareTicker[ticker] += shares
-        currentMessage = "BOUGHT %f of %s at %f amount available %f" % (shares, ticker, price, availableTickerFunds[ticker])
+        currentMessage.append("BOUGHT %f of %s at %f amount available %f" % (shares, ticker, price, availableTickerFunds[ticker]))
         return "BOUGHT %f of %s at %f amount available %f" % (shares, ticker, price, availableTickerFunds[ticker])
     
 def sellStock(ticker, price, shares):
@@ -69,7 +69,7 @@ def sellStock(ticker, price, shares):
     if investedShares >= shares:
         availableTickerFunds[ticker] += requestedFunds
         shareTicker[ticker] -= shares
-        currentMessage = "SOLD %f of %s at %f amount available %f" % (shares, ticker, price, availableTickerFunds[ticker])
+        currentMessage.append("SOLD %f of %s at %f amount available %f" % (shares, ticker, price, availableTickerFunds[ticker]))
         return "SOLD %f of %s at %f amount available %f" % (shares, ticker, price, availableTickerFunds[ticker])
 
 def getStockSymbol(companyName):
@@ -165,9 +165,9 @@ def getQuaterly():
                     records["sentiment"] = s
 
                     print("adding record %s %s to quarterly db" % (d, ticker))
-                    currentMessage = "adding record %s %s to quarterly db" % (d, ticker)
+                    currentMessage.append("adding record %s %s to quarterly db" % (d, ticker))
                     db.quaterly.insert(records)
-    currentMessage = "added all records to quarterly db, amending flag to not run again"
+    currentMessage.append("added all records to quarterly db, amending flag to not run again")
     print("added all records to quarterly db, amending flag to not run again")
     gotQuarterly = True
 
@@ -230,7 +230,7 @@ def getNews(firstRun = False):
     # records = json.loads(frame.T.to_json()).values()
     # db.myCollection.insert(records)
     firstRun = False
-    currentMessage = "Finished updating news content, uploaded to db"
+    currentMessage.append("Finished updating news content, uploaded to db")
     print "Finished updating news content, uploaded to db"
 
 def composeTag(article):

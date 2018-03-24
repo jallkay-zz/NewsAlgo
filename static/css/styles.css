@@ -342,6 +342,12 @@ input.options {
   margin-bottom: 20px;
 }
 
+.message-feed {
+  color: white;
+  font-size: 16px;
+  padding: 10px;
+}
+
 /* Checkbox */
 
 
