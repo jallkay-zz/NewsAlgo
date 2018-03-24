@@ -111,31 +111,7 @@ def getDates(tree, numOfDocs):
             print("Not enough docs to return, returning %i" % numOfDocs)
         for i in range(1, numOfDocs + 1):
             myDate = tree.body[11][5][0][i][3].text_content() # Pull date from DOM
-            print myDate
             dates.append(myDate)
-        # if paper[10] == '-': # FACEBOOK
-        #     myDate = paper[11:19].replace('x', '')
-        #     if len(myDate) == 7:
-        #         myDate = "0" + myDate
-        #     dateFull = datetime.strptime(myDate, "%m%d%Y").strftime("%Y%m%d")
-        # elif paper[16] == "_": # MICROSOFT, SNAP, TESLA
-        #     dateFull = paper[17:25] 
-
-        # elif paper[8:14] == "xom10q": # EXXON MOBIL
-        #     month = str(3 * int(paper[14]))
-        #     month = "0" + month if len(month) == 1 else month
-        #     year = paper[16:20]
-        #     day = "30"
-        #     dateFull = year + month + day
-        # elif paper[8:12] == "corp": # JP Morgan
-        #     month = str(3 * int(paper[13]))
-        #     month = "0" + month if len(month) == 1 else month
-        #     year = paper[14:18]
-        #     day = "30"
-        #     dateFull = year + month + day
-        # else: # fallback to previous date - 3 months
-        #     dateFull = (datetime.strptime(dateFull, "%Y%m%d") - relativedelta(months =+3)).strftime("%Y%m%d")
-
     
         return dates
 
@@ -157,24 +133,35 @@ def getQuaterly():
         
         company = edgar.Company(source, cik)
         tree = company.getAllFilings(filingType = "10-Q")
-        docs = edgar.getDocuments(tree, noOfDocuments=5)
-        papers = [''.join(doc) for doc in docs]
-        papers = [unicodedata.normalize("NFKD", pap) for pap in papers]
         dates = getDates(tree, 5)
-        print("Got papers from %s %s" % (source, ticker))
-        sentiments = [getSentiment(pap) for pap in papers]
-        print("Got sentiments from %s %s" % (source, ticker))
-        
-        for d, s in zip(dates, sentiments):
-            records = {}
-            data = list(db.quaterly.find({ "ticker" : ticker, "date" : d}))
-            if not len(data) > 0:
-                records["ticker"]    = ticker
-                records["date"]      = d
-                records["sentiment"] = s
 
-                print("adding record %s %s to quarterly db" % (d, ticker))
-                db.quaterly.insert(records)
+        data = list(db.quaterly.find({ "ticker" : ticker }))
+        trueCount = 0
+        for report in data:
+            if report['date'] in dates:
+                trueCount += 1 
+        if trueCount == len(dates):
+            print("Already have all data for %s (length %i)" % (ticker, trueCount))
+            continue
+        else:
+            docs = edgar.getDocuments(tree, noOfDocuments=5)
+            papers = [''.join(doc) for doc in docs]
+            papers = [unicodedata.normalize("NFKD", pap) for pap in papers]
+            
+            print("Got papers from %s %s" % (source, ticker))
+            sentiments = [getSentiment(pap) for pap in papers]
+            print("Got sentiments from %s %s" % (source, ticker))
+            
+            for d, s in zip(dates, sentiments):
+                records = {}
+                data = list(db.quaterly.find({ "ticker" : ticker, "date" : d}))
+                if not len(data) > 0:
+                    records["ticker"]    = ticker
+                    records["date"]      = d
+                    records["sentiment"] = s
+
+                    print("adding record %s %s to quarterly db" % (d, ticker))
+                    db.quaterly.insert(records)
     print("added all records to quarterly db, amending flag to not run again")
     gotQuarterly = True
 
@@ -189,8 +176,7 @@ def getNews(firstRun = False):
         dbUrls = [d['url'] for d in dbData]
     except:
         noData = True
-    data = {}
-    rawData = []
+
     alreadyThere = False
     count = 0
 
@@ -198,8 +184,8 @@ def getNews(firstRun = False):
     if not noData and firstRun:
         return
 
-    #if not gotQuarterly:
-    #    getQuaterly()
+    if not gotQuarterly:
+        getQuaterly()
 
     for source in newsSources:
 
@@ -212,6 +198,7 @@ def getNews(firstRun = False):
             converted   = convert(jsonconvert)
             
             for article in converted['articles']:
+                myData = None
                 count = count + 1
                 print('news source: %s progress: %s' % (source.title(), str(count)))
                 if not noData:
@@ -220,20 +207,26 @@ def getNews(firstRun = False):
                             alreadyThere = True
                             break
                     if not alreadyThere:
-                        rawData.append(composeTag(article))
+                        myData = composeTag(article)
                 else:
-                    rawData.append(composeTag(article))
+                    myData = composeTag(article)
 
-    for i in range(len(rawData)):
-        for name, value in rawData[i].iteritems():
-            if not data.get(name):
-                data[name] = {}
-            #add source
-            data[name][i] = value
+                if myData:
+                    frame = pandas.DataFrame.from_dict(myData)
+                    records = json.loads(frame.T.to_json()).values()
+                    db.myCollection.insert(records)
+                
+
+    # for i in range(len(rawData)):
+    #     for name, value in rawData[i].iteritems():
+    #         if not data.get(name):
+    #             data[name] = {}
+    #         #add source
+    #         data[name][i] = value
             
-    frame = pandas.DataFrame.from_dict(data)
-    records = json.loads(frame.T.to_json()).values()
-    db.myCollection.insert(records)
+    # frame = pandas.DataFrame.from_dict(data)
+    # records = json.loads(frame.T.to_json()).values()
+    # db.myCollection.insert(records)
     firstRun = False
     print "finished getting news, and uploaded to db"
 
@@ -633,7 +626,7 @@ if __name__ == "__main__":
     splitTickerfunds()
     client = pymongo.MongoClient(uri)
     db = client.get_default_database()
-    getNews(firstRun = False)
+    getNews(firstRun = True)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
     
