@@ -177,7 +177,6 @@ def getNews(firstRun = False):
     except:
         noData = True
 
-    alreadyThere = False
     count = 0
 
     threading.Timer(3600, getNews).start()
@@ -191,6 +190,7 @@ def getNews(firstRun = False):
 
         goBack = datetime.strftime(date.today() - timedelta(days = 5), "%Y-%m-%d")
         newsUrl     = ('https://newsapi.org/v2/everything?q=%s&from=%s&sortBy=popularity&sources=bloomberg,bbc-news,financial-times,reuters,fortune,financial-post&language=en&apiKey=' % (source, goBack)) + newsApiKey
+        print("getting news from %s" % newsUrl)
         response    = urllib.urlopen(newsUrl)
         returned    = response.read()
         if returned:
@@ -202,16 +202,13 @@ def getNews(firstRun = False):
                 count = count + 1
                 print('news source: %s progress: %s' % (source.title(), str(count)))
                 if not noData:
-                    for url in dbUrls:
-                        if article['url'] == url:
-                            alreadyThere = True
-                            break
-                    if not alreadyThere:
+                    if not article['url'] in dbUrls:
                         myData = composeTag(article)
                 else:
                     myData = composeTag(article)
 
                 if myData:
+                    print("added article from %s to data" % source)
                     frame = pandas.DataFrame.from_dict(myData)
                     records = json.loads(frame.T.to_json()).values()
                     db.myCollection.insert(records)
