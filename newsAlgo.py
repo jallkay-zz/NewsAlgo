@@ -111,6 +111,59 @@ def nextdoor(iterable):
 
 #pull in news 
 
+def evaluateSentiment1D(periodStart, periodEnd, ticker=False):
+    evaluations = []
+    
+    rangeData = []
+
+    stockPrices = {}
+    if not ticker:
+        tickers = [name[0].upper() for name in stockSymbols.values]
+        data = list(db.myCollection.find({}))
+    else:
+        tickers = [ticker]
+        data = list(db.myCollection.find({ "$or": [ { "tag_0.stockSymbol" : ticker }, { "tag_1.stockSymbol" : ticker },
+                                                    { "tag_2.stockSymbol" : ticker }, { "tag_3.stockSymbol" : ticker },
+                                                    { "tag_4.stockSymbol" : ticker }, { "tag_5.stockSymbol" : ticker },
+                                                    { "tag_6.stockSymbol" : ticker }, { "tag_7.stockSymbol" : ticker },
+                                                    { "tag_8.stockSymbol" : ticker }, { "tag_9.stockSymbol" : ticker },
+                                                    { "tag_10.stockSymbol" : ticker }]}))
+
+
+    for tic in tickers:
+        stockPrices[tic] = ts.get_intraday(tic, interval='1min', outputsize='full')
+    
+    times = [datetime.strptime(name, "%Y-%m-%d %H:%M:%S") for name in stockPrices[ticker][0].iterkeys()]
+    timesEnd = [datetime.strptime(name, "%Y-%m-%d %H:%M:%S") + timedelta(days = 1) for name in stockPrices[ticker][0].iterkeys()]
+    for obj in data:
+        pivot = datetime.strptime(obj['publishedAt'], '%Y-%m-%dT%H:%M:%SZ') if len(obj['publishedAt']) == 20 else datetime.strptime(obj['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        if pivot >= periodStart and pivot <= periodEnd:
+        
+            closest = min(times, key=lambda x: abs(x - pivot))
+            key = closest.strftime("%Y-%m-%d %H:%M:%S")
+            
+            pivotEnd = pivot + timedelta(days = 1)
+            closestEnd = min(timesEnd, key=lambda x: abs(x - pivotEnd))
+            keyEnd = closestEnd.strftime("%Y-%m-%d %H:%M:%S")
+
+            startPrice = stockPrices[ticker][0][key]['1. open']
+            endPrice   = stockPrices[ticker][0][keyEnd]['1. open']
+
+            if obj['sentiment']['pos'] > obj['sentiment']['neg']:
+                sentiment = "pos"
+            else:
+                sentiment = "neg"
+
+            if endPrice > startPrice and sentiment == "pos":
+                evaluations.append(True)
+            elif endPrice < startPrice and sentiment == "neg": 
+                evaluations.append(True)
+            else:
+                evaluations.append(False)
+    
+    return evaluations
+                
+
 def getDates(tree, numOfDocs):
     dates = []
 
@@ -401,7 +454,7 @@ def headlines():
         output.append(itemDict)
     
     output.sort(key=operator.itemgetter('publishedAt'), reverse=True)
-    
+
     return jsonify(output)
 
 
@@ -638,6 +691,15 @@ def stock(type, symbol):
             output['radius'][name]          = radius
         return jsonify(output)
 
+@app.route('/json/evaluate/1d/<periodStart>/<periodEnd>/<ticker>')
+def evaluate1D(periodStart, periodEnd, ticker = ""):
+    periodStart = datetime.strptime(periodStart, '%Y-%m-%d')
+    periodEnd   = datetime.strptime(periodEnd, '%Y-%m-%d')
+    if ticker != "":
+        evaluations = evaluateSentiment1D(periodStart, periodEnd, ticker=ticker)
+    else:
+        evaluations = evaluateSentiment1D(periodStart, periodEnd)
+    return jsonify(evaluations)
 
 @app.route('/dashboard')
 def index():
