@@ -16,6 +16,7 @@ from math import floor
 import os
 import sys
 import pymongo
+import operator
 from bson.objectid import ObjectId as ObjectId
 from dateutil.relativedelta import relativedelta
 import unicodedata
@@ -398,18 +399,21 @@ def headlines():
         itemDict['_id'] = str(itemDict['_id'])
         counter = counter + 1
         output.append(itemDict)
+    
+    output.sort(key=operator.itemgetter('publishedAt'), reverse=True)
+    
     return jsonify(output)
 
 
 @app.route('/json/headlines/<filter>')
 def headlinesFilter(filter):
     if filter == "stocks":
-        data = list(db.myCollection.find({"$or": [{ "tag_0.stockSymbol": { "$exists": True, "$ne": None } }, { "tag_1.stockSymbol": { "$exists": True, "$ne": None } },
-                                                  { "tag_2.stockSymbol": { "$exists": True, "$ne": None } }, { "tag_3.stockSymbol": { "$exists": True, "$ne": None } },
-                                                  { "tag_4.stockSymbol": { "$exists": True, "$ne": None } }, { "tag_5.stockSymbol": { "$exists": True, "$ne": None } },
-                                                  { "tag_6.stockSymbol": { "$exists": True, "$ne": None } }, { "tag_7.stockSymbol": { "$exists": True, "$ne": None } },
-                                                  { "tag_8.stockSymbol": { "$exists": True, "$ne": None } }, { "tag_9.stockSymbol": { "$exists": True, "$ne": None } },
-                                                  { "tag_10.stockSymbol": { "$exists": True, "$ne": None } } ] }))
+        data = list(db.myCollection.find({"$or": [{ "tag_0.stockSymbol": { "$exists": True, "$ne": "" } }, { "tag_1.stockSymbol": { "$exists": True, "$ne": "" } },
+                                                  { "tag_2.stockSymbol": { "$exists": True, "$ne": "" } }, { "tag_3.stockSymbol": { "$exists": True, "$ne": "" } },
+                                                  { "tag_4.stockSymbol": { "$exists": True, "$ne": "" } }, { "tag_5.stockSymbol": { "$exists": True, "$ne": "" } },
+                                                  { "tag_6.stockSymbol": { "$exists": True, "$ne": "" } }, { "tag_7.stockSymbol": { "$exists": True, "$ne": "" } },
+                                                  { "tag_8.stockSymbol": { "$exists": True, "$ne": "" } }, { "tag_9.stockSymbol": { "$exists": True, "$ne": "" } },
+                                                  { "tag_10.stockSymbol": { "$exists": True, "$ne": "" } } ] }))
     else:
         data = list(db.myCollection.find({}))
     output = []
@@ -443,6 +447,10 @@ def headlinesFilter(filter):
         itemDict['_id'] = str(itemDict['_id'])
         counter = counter + 1
         output.append(itemDict)
+
+    
+    output.sort(key=operator.itemgetter('publishedAt'), reverse=True)
+
     return jsonify(output)
 
 @app.route('/json/quarterly')
