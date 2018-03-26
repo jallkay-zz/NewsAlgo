@@ -40,37 +40,41 @@ initFunds = 25000.00
 
 currentMessage = []
 
-availableTickerFunds = {} # put amount of funds remaining in here 
-shareTicker = {} # put num of shares owned per ticker in here
-
 overrideData = True
 gotQuarterly = False
 splits = [('.s', 'D'), ("'s", 'D'), ('Inc', 'K')]
 
-def splitTickerfunds():
+def splitTickerFunds():
     size = len(stockSymbols.values)
     for ticker in stockSymbols.values:
-        availableTickerFunds[ticker[0]] = initFunds / size
-        shareTicker[ticker[0]] = 0
+        stocks = {}
+        stocks['ticker'] = ticker[0]
+        stocks['funds'] = initFunds / size
+        stocks['shares'] = 0
+        db.stocks.insert(stocks)
     
 def buyStock(ticker, price, shares):
-    availableFunds = availableTickerFunds[ticker]
+    obj = db.stocks.find({ "ticker" : ticker })[0]
+    availableFunds = obj['funds']
     requestedFunds = price * shares
     if requestedFunds < availableFunds:
-        availableTickerFunds[ticker] -= requestedFunds
-        shareTicker[ticker] += shares
-        currentMessage.append("BOUGHT %f of %s at %f amount available %f" % (shares, ticker, price, availableTickerFunds[ticker]))
-        return "BOUGHT %f of %s at %f amount available %f" % (shares, ticker, price, availableTickerFunds[ticker])
+        obj['funds'] -= requestedFunds
+        obj['shares'] += shares
+        db.stocks.insert(obj)
+        currentMessage.append("BOUGHT %f of %s at %f amount available %f" % (shares, ticker, price, obj['funds']))
+        return "BOUGHT %f of %s at %f amount available %f" % (shares, ticker, price, obj['funds'])
     
 def sellStock(ticker, price, shares):
-    availableFunds = availableTickerFunds[ticker]
-    investedShares  = shareTicker[ticker]
+    obj = db.stocks.find({ "ticker" : ticker })[0]
+    availableFunds = obj['funds']
+    investedShares  = obj['shares']
     requestedFunds = price * shares
     if investedShares >= shares:
-        availableTickerFunds[ticker] += requestedFunds
-        shareTicker[ticker] -= shares
-        currentMessage.append("SOLD %f of %s at %f amount available %f" % (shares, ticker, price, availableTickerFunds[ticker]))
-        return "SOLD %f of %s at %f amount available %f" % (shares, ticker, price, availableTickerFunds[ticker])
+        obj['funds'] += requestedFunds
+        obj['shares'] -= shares
+        db.stocks.insert(obj)
+        currentMessage.append("SOLD %f of %s at %f amount available %f" % (shares, ticker, price, obj['funds']))
+        return "SOLD %f of %s at %f amount available %f" % (shares, ticker, price, obj['funds'])
 
 def getStockSymbol(companyName):
     for name in stockSymbols.values:
@@ -352,6 +356,12 @@ def getSentiment(content):
     sentiment = sid.polarity_scores(content)
     return sentiment
 
+
+@app.route('/json/reset/tickerfunds')
+def resetTickerFunds():
+    splitTickerFunds()
+    return jsonify("True")
+
 @app.route('/json/headlines')
 def headlines():
     output = []
@@ -491,13 +501,20 @@ def detailAnalysis(mongoID):
 
 @app.route('/json/messages')
 def getMessages():
-    return jsonify(currentMessage)
+    if len(currentMessage) > 5:
+        returnMessage = currentMessage.reverse()[:5]
+    else:
+        returnMessage = currentMessage.reverse()
+    return jsonify(returnMessage)
 
 @app.route('/json/total')
 def getTotal():
-    available = sum(availableTickerFunds.values())
-    core = ts.get_batch_stock_quotes(shareTicker.keys())
-    invested = sum([shares * float(value['2. price']) for value, shares in zip(core[0], shareTicker.values())])
+    dbItems = list(db.stocks.find({}))
+    available = sum([obj['funds'] for obj in dbItems])
+    shares = [obj['shares'] for obj in dbItems]
+    tickers = [obj['ticker'] for obj in dbItems]
+    core = ts.get_batch_stock_quotes(tickers)
+    invested = sum([shares * float(value['2. price']) for value, shares in zip(core[0], shares)])
 
     total = available + invested
     return jsonify("$" + str(total))
@@ -505,10 +522,13 @@ def getTotal():
 @app.route('/json/totalall')
 def getAllTotal():
     output = {}
-    core = ts.get_batch_stock_quotes(shareTicker.keys())
-    invested = [shares * float(value['2. price']) for value, shares in zip(core[0], shareTicker.values())]
-    for name, i, j in zip(availableTickerFunds.keys(), availableTickerFunds.values(), invested):
-        output[name] = i + j 
+    dbItems = list(db.stocks.find({}))
+    shares = [obj['shares'] for obj in dbItems]
+    tickers = [obj['ticker'] for obj in dbItems]
+    core = ts.get_batch_stock_quotes(tickers)
+    invested = [shares * float(value['2. price']) for value, shares in zip(core[0], shares)]
+    for name, s, i in zip(tickers, shares, invested):
+        output[name] = s + i 
     return jsonify(output)
 
 @app.route('/json/<command>/<ticker>/<float:price>/<int:shares>')
@@ -633,7 +653,6 @@ def index():
 
 if __name__ == "__main__":
     stockSymbols = pandas.DataFrame.from_csv('shortListedStocks.csv', header=0)
-    splitTickerfunds()
     client = pymongo.MongoClient(uri)
     db = client.get_default_database()
     getNews(firstRun = True)
