@@ -111,13 +111,15 @@ def nextdoor(iterable):
 
 #pull in news 
 
-def evaluateSentiment1D(periodStart, periodEnd, ticker=False):
+def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False):
     evaluations = []
     
     rangeData = []
 
     stockPrices = {}
-    if not ticker:
+    stockTimes = {}
+    stockTimesEnd = {}
+    if ticker == False or ticker == None:
         tickers = [name[0].upper() for name in stockSymbols.values]
         data = list(db.myCollection.find({}))
     else:
@@ -131,35 +133,43 @@ def evaluateSentiment1D(periodStart, periodEnd, ticker=False):
 
 
     for tic in tickers:
-        stockPrices[tic] = ts.get_intraday(tic, interval='1min', outputsize='full')
-    
-    times = [datetime.strptime(name, "%Y-%m-%d %H:%M:%S") for name in stockPrices[ticker][0].iterkeys()]
-    timesEnd = [datetime.strptime(name, "%Y-%m-%d %H:%M:%S") + timedelta(days = 1) for name in stockPrices[ticker][0].iterkeys()]
+        stockPrices[tic] = ts.get_intraday(tic, interval='15min', outputsize='full')
+        stockTimes[tic] = [datetime.strptime(name, "%Y-%m-%d %H:%M:%S") for name in stockPrices[tic][0].iterkeys()]
+       # stockTimesEnd[tic] = [datetime.strptime(name, "%Y-%m-%d %H:%M:%S") + timedelta(days = periodDiff) for name in stockPrices[tic][0].iterkeys()]
+
     for obj in data:
-        pivot = datetime.strptime(obj['publishedAt'], '%Y-%m-%dT%H:%M:%SZ') if len(obj['publishedAt']) == 20 else datetime.strptime(obj['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
-        if pivot >= periodStart and pivot <= periodEnd:
-        
-            closest = min(times, key=lambda x: abs(x - pivot))
-            key = closest.strftime("%Y-%m-%d %H:%M:%S")
-            
-            pivotEnd = pivot + timedelta(days = 1)
-            closestEnd = min(timesEnd, key=lambda x: abs(x - pivotEnd))
-            keyEnd = closestEnd.strftime("%Y-%m-%d %H:%M:%S")
+        if obj.get('publishedAt'):
+            pivot = datetime.strptime(obj['publishedAt'], '%Y-%m-%dT%H:%M:%SZ') if len(obj['publishedAt']) == 20 else datetime.strptime(obj['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            if pivot >= periodStart and pivot <= periodEnd:
+                
+                ticker = ""
+                for item, value in obj.iteritems():
+                    if "tag_" in item:
+                        if value['stockSymbol'] != "":
+                            ticker = value['stockSymbol']
 
-            startPrice = stockPrices[ticker][0][key]['1. open']
-            endPrice   = stockPrices[ticker][0][keyEnd]['1. open']
+                if ticker != "":
+                    closest = min(stockTimes[ticker], key=lambda x: abs(x - pivot))
+                    key = closest.strftime("%Y-%m-%d %H:%M:%S")
+                    
+                    pivotEnd = pivot + timedelta(days = periodDiff)
+                    closestEnd = min(stockTimes[ticker], key=lambda y: abs(y - pivotEnd))
+                    keyEnd = closestEnd.strftime("%Y-%m-%d %H:%M:%S")
 
-            if obj['sentiment']['pos'] > obj['sentiment']['neg']:
-                sentiment = "pos"
-            else:
-                sentiment = "neg"
+                    startPrice = stockPrices[ticker][0][key]['1. open']
+                    endPrice   = stockPrices[ticker][0][keyEnd]['1. open']
 
-            if endPrice > startPrice and sentiment == "pos":
-                evaluations.append(True)
-            elif endPrice < startPrice and sentiment == "neg": 
-                evaluations.append(True)
-            else:
-                evaluations.append(False)
+                    if obj['sentiment']['pos'] > obj['sentiment']['neg']:
+                        sentiment = "pos"
+                    else:
+                        sentiment = "neg"
+
+                    if endPrice > startPrice and sentiment == "pos":
+                        evaluations.append(True)
+                    elif endPrice < startPrice and sentiment == "neg": 
+                        evaluations.append(True)
+                    else:
+                        evaluations.append(False)
     
     return evaluations
                 
@@ -276,17 +286,6 @@ def getNews(firstRun = False):
                     print("added article from %s to data" % source)
                     db.myCollection.insert(myData)
                 
-
-    # for i in range(len(rawData)):
-    #     for name, value in rawData[i].iteritems():
-    #         if not data.get(name):
-    #             data[name] = {}
-    #         #add source
-    #         data[name][i] = value
-            
-    # frame = pandas.DataFrame.from_dict(data)
-    # records = json.loads(frame.T.to_json()).values()
-    # db.myCollection.insert(records)
     firstRun = False
     currentMessage.append("Finished updating news content, uploaded to db")
     print "Finished updating news content, uploaded to db"
@@ -309,7 +308,9 @@ def composeTag(article):
             article['tag_' + str(i)]['name'] = ""
             article['tag_' + str(i)]['stockSymbol'] = ""
             article['tag_' + str(i)]['type'] = 'Other'
-    article['sentiment'] = getSentiment(article['title'] + ' ' + article['description'])
+    if newsArticle.get('title') and newsArticle.get('description'):
+        article['sentiment'] = getSentiment(article.get('title') + ' ' + article.get('description'))
+    
     return article
 
 
@@ -691,14 +692,20 @@ def stock(type, symbol):
             output['radius'][name]          = radius
         return jsonify(output)
 
-@app.route('/json/evaluate/1d/<periodStart>/<periodEnd>/<ticker>')
-def evaluate1D(periodStart, periodEnd, ticker = ""):
+@app.route('/json/evaluate/<periodStart>/<periodEnd>/<int:periodDiff>')
+def evaluate(periodStart, periodEnd, periodDiff):
     periodStart = datetime.strptime(periodStart, '%Y-%m-%d')
     periodEnd   = datetime.strptime(periodEnd, '%Y-%m-%d')
-    if ticker != "":
-        evaluations = evaluateSentiment1D(periodStart, periodEnd, ticker=ticker)
-    else:
-        evaluations = evaluateSentiment1D(periodStart, periodEnd)
+    
+    evaluations = evaluateSentiment(periodStart, periodEnd, periodDiff)
+    return jsonify(evaluations)
+
+@app.route('/json/evaluate/<periodStart>/<periodEnd>/<int:periodDiff>/<ticker>')
+def evaluateTicker(periodStart, periodEnd, periodDiff, ticker):
+    periodStart = datetime.strptime(periodStart, '%Y-%m-%d')
+    periodEnd   = datetime.strptime(periodEnd, '%Y-%m-%d')
+    evaluations = evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=ticker)
+    
     return jsonify(evaluations)
 
 @app.route('/dashboard')
