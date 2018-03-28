@@ -308,7 +308,7 @@ def composeTag(article):
             article['tag_' + str(i)]['name'] = ""
             article['tag_' + str(i)]['stockSymbol'] = ""
             article['tag_' + str(i)]['type'] = 'Other'
-    if newsArticle.get('title') and newsArticle.get('description'):
+    if article.get('title') and article.get('description'):
         article['sentiment'] = getSentiment(article.get('title') + ' ' + article.get('description'))
     
     return article
