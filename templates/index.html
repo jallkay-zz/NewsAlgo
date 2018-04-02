@@ -71,8 +71,9 @@
 																								<p>Filter only detected stocks</p><input class="options" id="filter-stocks" type="checkbox" onchange="changefilters()">
 																							</div>
 																							<div class="options-item">
-																								<p>Show Quarterly Reports Only</p><input class="options" id="filter-quarterly" type="checkbox" onchange="changefilters()"></div>
+																								<p>Show Quarterly Reports Only</p><input class="options" id="filter-quarterly" type="checkbox" onchange="changefilters()">
 																							</div>
+																						</div>
 																					</div>
 																				</div>
 																				<div id="myGrid" style="height:571px;width:auto;"></div>
@@ -138,6 +139,40 @@
 																							<span class="bottom"></span>
 																							<span class="circle"></span>
 																						</div><hr style="margin-bottom: 0px;">
+																						<div class="options-graph" style="display:none">
+																							<div class="options-graph-item">
+																								<p>Evaluate Performance</p>
+																								<input class="options" name=mygraphswitch id="graph-type" type="checkbox">
+																								<!--<p>Start Date</p><input class="graph-options" type="text" id="graph-start">
+																								<p>End Date</p><input class="graph-options" type="text" id="graph-end">
+																								<p>Eval Period</p><input class="graph-options" type="text" id="graph-diff">
+																								<p>Ticker</p><input class="graph-options" type="text" id="graph-ticker">-->
+																								<span class="input input--juro">
+																										<input class="input__field input__field--juro" type="text" id="input-28" />
+																										<label class="input__label input__label--juro" for="input-28">
+																											<span class="input__label-content input__label-content--juro">Start Date</span>
+																										</label>
+																								</span>
+																								<span class="input input--juro">
+																										<input class="input__field input__field--juro" type="text" id="input-28" />
+																										<label class="input__label input__label--juro" for="input-28">
+																											<span class="input__label-content input__label-content--juro">End Date</span>
+																										</label>
+																								</span>
+																								<span class="input input--juro">
+																										<input class="input__field input__field--juro" type="text" id="input-28" />
+																										<label class="input__label input__label--juro" for="input-28">
+																											<span class="input__label-content input__label-content--juro">Eval Period</span>
+																										</label>
+																								</span>
+																								<span class="input input--juro">
+																										<input class="input__field input__field--juro" type="text" id="input-28" />
+																										<label class="input__label input__label--juro" for="input-28">
+																											<span class="input__label-content input__label-content--juro">Ticker</span>
+																										</label>
+																								</span>
+																							</div>
+																						</div>
 																					</div>
 																				</div>
 																				<div id="sentiment"><canvas id="sentimentChart" height="330" width="330"></canvas></div>
@@ -612,7 +647,7 @@
 			
 			function changeoptions(obj) {
 				if($(obj).is(":checked")) {
-					$(obj).parent().parent().animate({"height" : "100px"});
+					$(obj).parent().parent().animate({"height" : "250px"});
 					$($(obj).parent().parent().children()[2]).css({"display" : "block"});
 
 				}
