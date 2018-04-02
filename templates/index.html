@@ -308,9 +308,7 @@
 						grid = new Slick.Grid("#myGrid", dataView, columns, options);
 						grid.setSelectionModel(new Slick.CellSelectionModel());
 						grid.onClick.subscribe(cellClicked);
-						//var pager = new Slick.Controls.Pager(dataView, grid, $("#pager"));
-						//var columnpicker = new Slick.Controls.ColumnPicker(columns, grid, options);
-						//grid.autosizeColumns()
+
 						$("#inlineFilterPanel")
 							.appendTo(grid.getTopPanel())
 							.show();

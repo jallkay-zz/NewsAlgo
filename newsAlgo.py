@@ -61,7 +61,7 @@ def buyStock(ticker, price, shares):
     if requestedFunds < availableFunds:
         obj['funds'] -= requestedFunds
         obj['shares'] += shares
-        db.stocks.insert(obj)
+        db.stocks.update( { "_id" : obj['_id'] } , { "$set" : obj})
         currentMessage.append("BOUGHT %f of %s at %f amount available %f" % (shares, ticker, price, obj['funds']))
         return "BOUGHT %f of %s at %f amount available %f" % (shares, ticker, price, obj['funds'])
     
@@ -73,7 +73,7 @@ def sellStock(ticker, price, shares):
     if investedShares >= shares:
         obj['funds'] += requestedFunds
         obj['shares'] -= shares
-        db.stocks.insert(obj)
+        db.stocks.update( { "_id" : obj['_id'] } , { "$set" : obj})
         currentMessage.append("SOLD %f of %s at %f amount available %f" % (shares, ticker, price, obj['funds']))
         return "SOLD %f of %s at %f amount available %f" % (shares, ticker, price, obj['funds'])
 
