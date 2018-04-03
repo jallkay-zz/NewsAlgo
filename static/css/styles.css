@@ -373,8 +373,10 @@ input.options {
   float: right;
   position: relative;
   top: -28px;
+  background: none;
+  border: none;
+  border-bottom: 2px dotted white;
 }
-
 #graph-type {
   width: 100%;
   /* position: relative; */

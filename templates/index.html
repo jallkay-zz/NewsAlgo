@@ -143,11 +143,12 @@
 																							<div class="options-graph-item">
 																								<p>Evaluate Performance</p>
 																								<input class="options" name=mygraphswitch id="graph-type" type="checkbox">
-																								<!--<p>Start Date</p><input class="graph-options" type="text" id="graph-start">
+																								<p>Start Date</p><input class="graph-options" type="text" id="graph-start">
 																								<p>End Date</p><input class="graph-options" type="text" id="graph-end">
 																								<p>Eval Period</p><input class="graph-options" type="text" id="graph-diff">
-																								<p>Ticker</p><input class="graph-options" type="text" id="graph-ticker">-->
-																								<span class="input input--juro">
+																								<p>Ticker</p><input class="graph-options" type="text" id="graph-ticker">
+																								<button onclick="evaluatePerformance()">Run</button>
+																								<!-- <span class="input input--juro">
 																										<input class="input__field input__field--juro" type="text" id="input-28" />
 																										<label class="input__label input__label--juro" for="input-28">
 																											<span class="input__label-content input__label-content--juro">Start Date</span>
@@ -170,7 +171,7 @@
 																										<label class="input__label input__label--juro" for="input-28">
 																											<span class="input__label-content input__label-content--juro">Ticker</span>
 																										</label>
-																								</span>
+																								</span> -->
 																							</div>
 																						</div>
 																					</div>
@@ -620,11 +621,58 @@
 							window.myChart.sliderElement.remove();
 							$('.ticker-focus')[0].innerHTML = "";
 						}
-
+						
 						
 					}
 				});
 			};
+
+			function evaluatePerformance() {
+				
+				var periodStart = $("#graph-start")[0].value;
+				var periodEnd   = $("#graph-end")[0].value;
+				var diff        = $("#graph-diff")[0].value;
+				var ticker      = $("#graph-ticker")[0].value;
+
+				$.ajax({
+					type: "GET",
+					url: '/json/evaluate/' + periodStart + '/' + periodEnd + '/' + diff + '/' + ticker,
+					dataType: 'json',
+					success: function(data) {
+
+						if (window.sentimentChart.chart) {
+							window.sentimentChart.chart.destroy();
+						}
+						
+						var trues = data.filter(v => v).length;
+						var values = [trues, (data.length - trues)]
+						var sctx = document.getElementById("sentimentChart").getContext('2d');
+						var myBarChart = new Chart(sctx, {
+							type: 'bar',
+							data: {
+								labels: ['True', 'False'],
+								datasets: [{
+									data: values,
+									backgroundColor: ['green', 'red'],
+								}],
+							},
+							options: {
+								scales: {
+									yAxes: [{
+										ticks: {
+											beginAtZero: true
+										}
+									}]
+								}, 
+								legend: {
+									display: false
+								},
+								responsive: false,
+							}
+						});
+					}
+				});
+			}
 
 			function changefilters() {
 				
