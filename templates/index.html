@@ -634,9 +634,23 @@
 				var diff        = $("#graph-diff")[0].value;
 				var ticker      = $("#graph-ticker")[0].value;
 
+				var evalCheckBox = document.getElementById("graph-type");
+				if(evalCheckBox.checked == true) {
+					var quarterly = true;
+				}
+				else {
+					var quarterly = false;
+				}
+				if(ticker == "") {
+					var arg = periodStart + '/' + periodEnd + '/' + diff + '/ALL/' + quarterly;
+				}
+				else {
+					var arg = periodStart + '/' + periodEnd + '/' + diff + '/' + ticker + '/' + quarterly;
+				}
+
 				$.ajax({
 					type: "GET",
-					url: '/json/evaluate/' + periodStart + '/' + periodEnd + '/' + diff + '/' + ticker,
+					url: '/json/evaluate/' + arg,
 					dataType: 'json',
 					success: function(data) {
 

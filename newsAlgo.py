@@ -111,7 +111,7 @@ def nextdoor(iterable):
 
 #pull in news 
 
-def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False):
+def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False, quarterly=False):
     evaluations = []
     
     rangeData = []
@@ -121,40 +121,68 @@ def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False):
     stockTimesEnd = {}
     if ticker == False or ticker == None:
         tickers = [name[0].upper() for name in stockSymbols.values]
-        data = list(db.myCollection.find({}))
     else:
         tickers = [ticker]
-        data = list(db.myCollection.find({ "$or": [ { "tag_0.stockSymbol" : ticker }, { "tag_1.stockSymbol" : ticker },
+
+
+    if not quarterly:
+        if ticker == False or ticker == None:
+            data = list(db.myCollection.find({}))
+        else:
+            data = list(db.myCollection.find({ "$or": [ { "tag_0.stockSymbol" : ticker }, { "tag_1.stockSymbol" : ticker },
                                                     { "tag_2.stockSymbol" : ticker }, { "tag_3.stockSymbol" : ticker },
                                                     { "tag_4.stockSymbol" : ticker }, { "tag_5.stockSymbol" : ticker },
                                                     { "tag_6.stockSymbol" : ticker }, { "tag_7.stockSymbol" : ticker },
                                                     { "tag_8.stockSymbol" : ticker }, { "tag_9.stockSymbol" : ticker },
                                                     { "tag_10.stockSymbol" : ticker }]}))
-
+    else:
+        if ticker == False or ticker == None:
+            data = list(db.quaterly.find({}))
+        else:
+            data = list(db.quaterly.find({ "ticker" : ticker } ))
 
     for tic in tickers:
-        stockPrices[tic] = ts.get_intraday(tic, interval='15min', outputsize='full')
-        stockTimes[tic] = [datetime.strptime(name, "%Y-%m-%d %H:%M:%S") for name in stockPrices[tic][0].iterkeys()]
-       # stockTimesEnd[tic] = [datetime.strptime(name, "%Y-%m-%d %H:%M:%S") + timedelta(days = periodDiff) for name in stockPrices[tic][0].iterkeys()]
+        if (datetime.utcnow() - periodStart) > timedelta(weeks = 1):
+            stockPrices[tic] = ts.get_daily(tic, outputsize='full')
+            stockTimes[tic] = [datetime.strptime(name, "%Y-%m-%d") for name in stockPrices[tic][0].iterkeys()]
+        else:
+            stockPrices[tic] = ts.get_intraday(tic, interval='15min', outputsize='full')
+            stockTimes[tic] = [datetime.strptime(name, "%Y-%m-%d %H:%M:%S") for name in stockPrices[tic][0].iterkeys()]
 
     for obj in data:
-        if obj.get('publishedAt'):
-            pivot = datetime.strptime(obj['publishedAt'], '%Y-%m-%dT%H:%M:%SZ') if len(obj['publishedAt']) == 20 else datetime.strptime(obj['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        
+        if obj.get('publishedAt') or obj.get('date'):
+            if quarterly:
+                pivot = datetime.strptime(obj['date'], "%Y-%m-%d")
+            else:
+                pivot = datetime.strptime(obj['publishedAt'], '%Y-%m-%dT%H:%M:%SZ') if len(obj['publishedAt']) == 20 else datetime.strptime(obj['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
             if pivot >= periodStart and pivot <= periodEnd:
                 
                 ticker = ""
                 for item, value in obj.iteritems():
                     if "tag_" in item:
-                        if value['stockSymbol'] != "":
-                            ticker = value['stockSymbol']
+                        if value:
+                            if value.get('stockSymbol') != "" and value.get('stockSymbol'):
+                                ticker = value['stockSymbol']
+                    
+                    elif "ticker" in item:
+                        ticker = value
 
                 if ticker != "":
+                    if ticker == "BRKA":
+                        ticker = "BRK.A"
                     closest = min(stockTimes[ticker], key=lambda x: abs(x - pivot))
-                    key = closest.strftime("%Y-%m-%d %H:%M:%S")
+                    if quarterly:
+                        key = closest.strftime("%Y-%m-%d")
+                    else:
+                        key = closest.strftime("%Y-%m-%d %H:%M:%S")
                     
                     pivotEnd = pivot + timedelta(days = periodDiff)
                     closestEnd = min(stockTimes[ticker], key=lambda y: abs(y - pivotEnd))
-                    keyEnd = closestEnd.strftime("%Y-%m-%d %H:%M:%S")
+                    if quarterly:
+                        keyEnd = closestEnd.strftime("%Y-%m-%d")
+                    else:
+                        keyEnd = closestEnd.strftime("%Y-%m-%d %H:%M:%S")
 
                     startPrice = stockPrices[ticker][0][key]['1. open']
                     endPrice   = stockPrices[ticker][0][keyEnd]['1. open']
@@ -692,19 +720,15 @@ def stock(type, symbol):
             output['radius'][name]          = radius
         return jsonify(output)
 
-@app.route('/json/evaluate/<periodStart>/<periodEnd>/<int:periodDiff>')
-def evaluate(periodStart, periodEnd, periodDiff):
+@app.route('/json/evaluate/<periodStart>/<periodEnd>/<int:periodDiff>/<ticker>/<quarterly>')
+def evaluateTicker(periodStart, periodEnd, periodDiff, ticker, quarterly):
     periodStart = datetime.strptime(periodStart, '%Y-%m-%d')
     periodEnd   = datetime.strptime(periodEnd, '%Y-%m-%d')
-    
-    evaluations = evaluateSentiment(periodStart, periodEnd, periodDiff)
-    return jsonify(evaluations)
-
-@app.route('/json/evaluate/<periodStart>/<periodEnd>/<int:periodDiff>/<ticker>')
-def evaluateTicker(periodStart, periodEnd, periodDiff, ticker):
-    periodStart = datetime.strptime(periodStart, '%Y-%m-%d')
-    periodEnd   = datetime.strptime(periodEnd, '%Y-%m-%d')
-    evaluations = evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=ticker)
+    quarterly = False if quarterly == "false" else True
+    if ticker == "ALL":
+        evaluations = evaluateSentiment(periodStart, periodEnd, periodDiff, quarterly=quarterly)
+    else:
+        evaluations = evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=ticker, quarterly=quarterly)
     
     return jsonify(evaluations)
 
