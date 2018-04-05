@@ -387,6 +387,12 @@ input.options {
   top: unset;
 }
 
+#graph-scatter {
+  display: inline-block;
+  top: -28px;
+  right: 0px;
+}
+
 #graph-type:after {
   height: 30px;
   width: 190px;

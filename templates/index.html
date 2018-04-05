@@ -147,6 +147,7 @@
 																								<p>End Date</p><input class="graph-options" type="text" id="graph-end">
 																								<p>Eval Period</p><input class="graph-options" type="text" id="graph-diff">
 																								<p>Ticker</p><input class="graph-options" type="text" id="graph-ticker">
+																								<p>Show scatter graph</p><input class="options" id="graph-scatter" type="checkbox">
 																								<button onclick="evaluatePerformance()">Run</button>
 																								<!-- <span class="input input--juro">
 																										<input class="input__field input__field--juro" type="text" id="input-28" />
@@ -635,18 +636,28 @@
 				var ticker      = $("#graph-ticker")[0].value;
 
 				var evalCheckBox = document.getElementById("graph-type");
+				var scatterCheckBox = document.getElementById("graph-scatter");
 				if(evalCheckBox.checked == true) {
 					var quarterly = true;
+					var type = "10-Q";
 				}
 				else {
 					var quarterly = false;
+					var type = "News";
 				}
-				if(ticker == "") {
-					var arg = periodStart + '/' + periodEnd + '/' + diff + '/ALL/' + quarterly;
+				if(scatterCheckBox.checked == true) {
+					var scatter = true;
 				}
 				else {
-					var arg = periodStart + '/' + periodEnd + '/' + diff + '/' + ticker + '/' + quarterly;
+					var scatter = false;
 				}
+				if(ticker == "") {
+					ticker = 'ALL';
+				}
+				
+				var arg = periodStart + '/' + periodEnd + '/' + diff + '/' + ticker + '/' + quarterly + '/' + scatter;
+
+				var title = 'Sentiment Performance for ' +  type + ': (' + ticker + ') ' + periodStart + ' - ' + periodEnd + ' Over ' + diff + ' Days';
 
 				$.ajax({
 					type: "GET",
@@ -657,33 +668,65 @@
 						if (window.sentimentChart.chart) {
 							window.sentimentChart.chart.destroy();
 						}
-						
-						var trues = data.filter(v => v).length;
-						var values = [trues, (data.length - trues)]
-						var sctx = document.getElementById("sentimentChart").getContext('2d');
-						var myBarChart = new Chart(sctx, {
-							type: 'bar',
-							data: {
-								labels: ['True', 'False'],
-								datasets: [{
-									data: values,
-									backgroundColor: ['green', 'red'],
-								}],
-							},
-							options: {
-								scales: {
-									yAxes: [{
-										ticks: {
-											beginAtZero: true
-										}
-									}]
-								}, 
-								legend: {
-									display: false
+						if(scatter == false) {
+							var trues = data.filter(v => v).length;
+							var values = [trues, (data.length - trues)]
+							var sctx = document.getElementById("sentimentChart").getContext('2d');
+							var myBarChart = new Chart(sctx, {
+								type: 'bar',
+								data: {
+									labels: ['True', 'False'],
+									datasets: [{
+										data: values,
+										backgroundColor: ['green', 'red'],
+									}],
 								},
-								responsive: false,
-							}
-						});
+								options: {
+									scales: {
+										yAxes: [{
+											ticks: {
+												beginAtZero: true
+											}
+										}]
+									}, 
+									legend: {
+										display: false
+									},
+									title: {
+										display: true,
+										text: title
+									},
+									responsive: false,
+								}
+							});
+						}
+						else {
+							var sctx = document.getElementById("sentimentChart").getContext('2d');
+							var myLineChart = new Chart(sctx, {
+								type: 'scatter',
+								data: {
+									labels: Object.keys(data['pos']),
+									backgroundColor: ['green', 'red'],
+									datasets: [
+										{
+											label: 'Pos',
+											data: Object.values(data['pos'])
+										},
+										{
+											
+											label: 'Neg',
+											data: Object.values(data['neg'])
+										}
+									],
+								
+								},
+								options: { legend: {
+										display: false
+									},
+									responsive: false,
+								}	
+							});
+						}
 					}
 				});
 			}

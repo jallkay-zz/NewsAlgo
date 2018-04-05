@@ -111,9 +111,12 @@ def nextdoor(iterable):
 
 #pull in news 
 
-def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False, quarterly=False):
+def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False, quarterly=False, scatter=False):
     evaluations = []
-    
+    if scatter: 
+        evaluations = {}
+        evaluations['pos'] = {}
+        evaluations['neg'] = {}
     rangeData = []
 
     stockPrices = {}
@@ -162,7 +165,9 @@ def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False, quarterl
                 for item, value in obj.iteritems():
                     if "tag_" in item:
                         if value:
-                            if value.get('stockSymbol') != "" and value.get('stockSymbol'):
+                            if type(value) == unicode:
+                                value = ast.literal_eval(value)
+                            if value.get('stockSymbol') != "" and value.get('stockSymbol') and value.get('stockSymbol') in tickers:
                                 ticker = value['stockSymbol']
                     
                     elif "ticker" in item:
@@ -171,33 +176,76 @@ def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False, quarterl
                 if ticker != "":
                     if ticker == "BRKA":
                         ticker = "BRK.A"
-                    closest = min(stockTimes[ticker], key=lambda x: abs(x - pivot))
-                    if quarterly:
-                        key = closest.strftime("%Y-%m-%d")
-                    else:
-                        key = closest.strftime("%Y-%m-%d %H:%M:%S")
-                    
-                    pivotEnd = pivot + timedelta(days = periodDiff)
-                    closestEnd = min(stockTimes[ticker], key=lambda y: abs(y - pivotEnd))
-                    if quarterly:
-                        keyEnd = closestEnd.strftime("%Y-%m-%d")
-                    else:
-                        keyEnd = closestEnd.strftime("%Y-%m-%d %H:%M:%S")
 
-                    startPrice = stockPrices[ticker][0][key]['1. open']
-                    endPrice   = stockPrices[ticker][0][keyEnd]['1. open']
+                    if scatter:
 
-                    if obj['sentiment']['pos'] > obj['sentiment']['neg']:
-                        sentiment = "pos"
-                    else:
-                        sentiment = "neg"
+                        for i in range(0, periodDiff):
+                            closest = min(stockTimes[ticker], key=lambda x: abs(x - pivot))
+                            if quarterly or (datetime.utcnow() - periodStart) > timedelta(weeks = 1):
+                                key = closest.strftime("%Y-%m-%d")
+                            else:
+                                key = closest.strftime("%Y-%m-%d %H:%M:%S")
 
-                    if endPrice > startPrice and sentiment == "pos":
-                        evaluations.append(True)
-                    elif endPrice < startPrice and sentiment == "neg": 
-                        evaluations.append(True)
+                            pivotEnd = pivot + timedelta(days = i)
+                            closestEnd = min(stockTimes[ticker], key=lambda y: abs(y - pivotEnd))
+                            if quarterly or (datetime.utcnow() - periodStart) > timedelta(weeks = 1):
+                                keyEnd = closestEnd.strftime("%Y-%m-%d")
+                            else:
+                                keyEnd = closestEnd.strftime("%Y-%m-%d %H:%M:%S")
+
+                            startPrice = stockPrices[ticker][0][key]['1. open']
+                            endPrice   = stockPrices[ticker][0][keyEnd]['1. open']
+
+                            if type(obj['sentiment']) == unicode:
+                                obj['sentiment'] = ast.literal_eval(obj['sentiment'])
+                            if obj['sentiment']['pos'] > obj['sentiment']['neg']:
+                                sentiment = "pos"
+                            else:
+                                sentiment = "neg"
+                            scatterEnd = closestEnd.strftime("%Y-%m-%d")
+                            if endPrice > startPrice and sentiment == "pos":
+                                if not evaluations['pos'].get(scatterEnd):
+                                    evaluations['pos'][scatterEnd] = 0
+                                evaluations['pos'][scatterEnd] += 1
+                            elif endPrice < startPrice and sentiment == "neg": 
+                                if not evaluations['pos'].get(scatterEnd):
+                                    evaluations['pos'][scatterEnd] = 0
+                                evaluations['pos'][scatterEnd] += 1
+                            else:
+                                if not evaluations['neg'].get(scatterEnd):
+                                    evaluations['neg'][scatterEnd] = 0
+                                evaluations['neg'][scatterEnd] += 1
                     else:
-                        evaluations.append(False)
+
+                        closest = min(stockTimes[ticker], key=lambda x: abs(x - pivot))
+                        if quarterly or (datetime.utcnow() - periodStart) > timedelta(weeks = 1):
+                            key = closest.strftime("%Y-%m-%d")
+                        else:
+                            key = closest.strftime("%Y-%m-%d %H:%M:%S")
+                        
+                        pivotEnd = pivot + timedelta(days = periodDiff)
+                        closestEnd = min(stockTimes[ticker], key=lambda y: abs(y - pivotEnd))
+                        if quarterly or (datetime.utcnow() - periodStart) > timedelta(weeks = 1):
+                            keyEnd = closestEnd.strftime("%Y-%m-%d")
+                        else:
+                            keyEnd = closestEnd.strftime("%Y-%m-%d %H:%M:%S")
+
+                        startPrice = stockPrices[ticker][0][key]['1. open']
+                        endPrice   = stockPrices[ticker][0][keyEnd]['1. open']
+
+                        if type(obj['sentiment']) == unicode:
+                            obj['sentiment'] = ast.literal_eval(obj['sentiment'])
+                        if obj['sentiment']['pos'] > obj['sentiment']['neg']:
+                            sentiment = "pos"
+                        else:
+                            sentiment = "neg"
+
+                        if endPrice > startPrice and sentiment == "pos":
+                            evaluations.append(True)
+                        elif endPrice < startPrice and sentiment == "neg": 
+                            evaluations.append(True)
+                        else:
+                            evaluations.append(False)
     
     return evaluations
                 
@@ -720,15 +768,16 @@ def stock(type, symbol):
             output['radius'][name]          = radius
         return jsonify(output)
 
-@app.route('/json/evaluate/<periodStart>/<periodEnd>/<int:periodDiff>/<ticker>/<quarterly>')
-def evaluateTicker(periodStart, periodEnd, periodDiff, ticker, quarterly):
+@app.route('/json/evaluate/<periodStart>/<periodEnd>/<int:periodDiff>/<ticker>/<quarterly>/<scatter>')
+def evaluateTicker(periodStart, periodEnd, periodDiff, ticker, quarterly, scatter):
     periodStart = datetime.strptime(periodStart, '%Y-%m-%d')
     periodEnd   = datetime.strptime(periodEnd, '%Y-%m-%d')
     quarterly = False if quarterly == "false" else True
+    scatter = False if scatter == "false" else True
     if ticker == "ALL":
-        evaluations = evaluateSentiment(periodStart, periodEnd, periodDiff, quarterly=quarterly)
+        evaluations = evaluateSentiment(periodStart, periodEnd, periodDiff, quarterly=quarterly, scatter=scatter)
     else:
-        evaluations = evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=ticker, quarterly=quarterly)
+        evaluations = evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=ticker, quarterly=quarterly, scatter=scatter)
     
     return jsonify(evaluations)
 
