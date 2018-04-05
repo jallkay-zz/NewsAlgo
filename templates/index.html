@@ -703,18 +703,23 @@
 						else {
 							var sctx = document.getElementById("sentimentChart").getContext('2d');
 							var myLineChart = new Chart(sctx, {
-								type: 'scatter',
+								type: 'line',
 								data: {
 									labels: Object.keys(data['pos']),
-									backgroundColor: ['green', 'red'],
 									datasets: [
+										{fill: false},     
 										{
 											label: 'Pos',
+											fill: false,
+											borderColor: 'green',
 											data: Object.values(data['pos'])
+											
 										},
 										{
 											
 											label: 'Neg',
+											fill: false,
+											borderColor: 'red',
 											data: Object.values(data['neg'])
 										}
 									],

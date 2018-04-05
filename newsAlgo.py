@@ -131,6 +131,7 @@ def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False, quarterl
     if not quarterly:
         if ticker == False or ticker == None:
             data = list(db.myCollection.find({}))
+            print("got all news data for evaluation")
         else:
             data = list(db.myCollection.find({ "$or": [ { "tag_0.stockSymbol" : ticker }, { "tag_1.stockSymbol" : ticker },
                                                     { "tag_2.stockSymbol" : ticker }, { "tag_3.stockSymbol" : ticker },
@@ -138,20 +139,26 @@ def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False, quarterl
                                                     { "tag_6.stockSymbol" : ticker }, { "tag_7.stockSymbol" : ticker },
                                                     { "tag_8.stockSymbol" : ticker }, { "tag_9.stockSymbol" : ticker },
                                                     { "tag_10.stockSymbol" : ticker }]}))
+            print("got all news data for evaluation - %s" % ticker)
     else:
         if ticker == False or ticker == None:
             data = list(db.quaterly.find({}))
+            print("got all quarterly data for evaluation")
         else:
             data = list(db.quaterly.find({ "ticker" : ticker } ))
+            print("got all quarterly data for evaluation - %s" % ticker)
 
     for tic in tickers:
         if (datetime.utcnow() - periodStart) > timedelta(weeks = 1):
             stockPrices[tic] = ts.get_daily(tic, outputsize='full')
             stockTimes[tic] = [datetime.strptime(name, "%Y-%m-%d") for name in stockPrices[tic][0].iterkeys()]
+            print("got daily stock prices for %s" % tic)
         else:
             stockPrices[tic] = ts.get_intraday(tic, interval='15min', outputsize='full')
             stockTimes[tic] = [datetime.strptime(name, "%Y-%m-%d %H:%M:%S") for name in stockPrices[tic][0].iterkeys()]
+            print("got intraday stock prices for %s" % tic)
 
+    print("evaluating data")
     for obj in data:
         
         if obj.get('publishedAt') or obj.get('date'):
@@ -179,7 +186,7 @@ def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False, quarterl
 
                     if scatter:
 
-                        for i in range(0, periodDiff):
+                        for i in range(1, periodDiff):
                             closest = min(stockTimes[ticker], key=lambda x: abs(x - pivot))
                             if quarterly or (datetime.utcnow() - periodStart) > timedelta(weeks = 1):
                                 key = closest.strftime("%Y-%m-%d")
@@ -202,7 +209,7 @@ def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False, quarterl
                                 sentiment = "pos"
                             else:
                                 sentiment = "neg"
-                            scatterEnd = closestEnd.strftime("%Y-%m-%d")
+                            scatterEnd = 'Day' + str(i) if len(str(i)) == 2 else 'Day 0' + str(i)
                             if endPrice > startPrice and sentiment == "pos":
                                 if not evaluations['pos'].get(scatterEnd):
                                     evaluations['pos'][scatterEnd] = 0
@@ -246,7 +253,7 @@ def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False, quarterl
                             evaluations.append(True)
                         else:
                             evaluations.append(False)
-    
+    print("finished evaluating data, returning")
     return evaluations
                 
 
