@@ -64,6 +64,9 @@ def buyStock(ticker, price, shares):
         db.stocks.update( { "_id" : obj['_id'] } , { "$set" : obj})
         currentMessage.append("BOUGHT %f of %s at %f amount available %f" % (shares, ticker, price, obj['funds']))
         return "BOUGHT %f of %s at %f amount available %f" % (shares, ticker, price, obj['funds'])
+    else:
+        return "NOT BOUGHT %f of %s at %f, insufficient funds. amount available %f" % (shares, ticker, price, obj['funds'])
+
     
 def sellStock(ticker, price, shares):
     obj = db.stocks.find({ "ticker" : ticker })[0]
@@ -76,6 +79,8 @@ def sellStock(ticker, price, shares):
         db.stocks.update( { "_id" : obj['_id'] } , { "$set" : obj})
         currentMessage.append("SOLD %f of %s at %f amount available %f" % (shares, ticker, price, obj['funds']))
         return "SOLD %f of %s at %f amount available %f" % (shares, ticker, price, obj['funds'])
+    else:
+        return "NOT SOLD %f of %s at %f amount available %f, invested shares %i" % (shares, ticker, price, obj['funds'], obj['shares'])
 
 def getStockSymbol(companyName):
     for name in stockSymbols.values:
@@ -110,6 +115,95 @@ def nextdoor(iterable):
     yield (prev_item, current_item, None)
 
 #pull in news 
+
+def backtestData(periodStart, periodEnd, ticker=False, quarterly=False):
+
+    stockPrices = {}
+    stockTimes = {}
+    if ticker == False or ticker == None:
+        tickers = [name[0].upper() for name in stockSymbols.values]
+    else:
+        tickers = [ticker]
+
+
+    if not quarterly:
+        if ticker == False or ticker == None:
+            data = list(db.myCollection.find({}))
+            print("got all news data for evaluation")
+        else:
+            data = list(db.myCollection.find({ "$or": [ { "tag_0.stockSymbol" : ticker }, { "tag_1.stockSymbol" : ticker },
+                                                    { "tag_2.stockSymbol" : ticker }, { "tag_3.stockSymbol" : ticker },
+                                                    { "tag_4.stockSymbol" : ticker }, { "tag_5.stockSymbol" : ticker },
+                                                    { "tag_6.stockSymbol" : ticker }, { "tag_7.stockSymbol" : ticker },
+                                                    { "tag_8.stockSymbol" : ticker }, { "tag_9.stockSymbol" : ticker },
+                                                    { "tag_10.stockSymbol" : ticker }]}))
+            print("got all news data for evaluation - %s" % ticker)
+    else:
+        if ticker == False or ticker == None:
+            data = list(db.quaterly.find({}))
+            print("got all quarterly data for evaluation")
+        else:
+            data = list(db.quaterly.find({ "ticker" : ticker } ))
+            print("got all quarterly data for evaluation - %s" % ticker)
+
+    for tic in tickers:
+        if (datetime.utcnow() - periodStart) > timedelta(weeks = 1):
+            stockPrices[tic] = ts.get_daily(tic, outputsize='full')
+            stockTimes[tic] = [datetime.strptime(name, "%Y-%m-%d") for name in stockPrices[tic][0].iterkeys()]
+            print("got daily stock prices for %s" % tic)
+        else:
+            stockPrices[tic] = ts.get_intraday(tic, interval='15min', outputsize='full')
+            stockTimes[tic] = [datetime.strptime(name, "%Y-%m-%d %H:%M:%S") for name in stockPrices[tic][0].iterkeys()]
+            print("got intraday stock prices for %s" % tic)
+
+    print("evaluating data")
+    for obj in data:
+        if obj.get('publishedAt') or obj.get('date'):
+            if quarterly:
+                pivot = datetime.strptime(obj['date'], "%Y-%m-%d")
+            else:
+                pivot = datetime.strptime(obj['publishedAt'], '%Y-%m-%dT%H:%M:%SZ') if len(obj['publishedAt']) == 20 else datetime.strptime(obj['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            if pivot >= periodStart and pivot <= periodEnd:
+                
+                ticker = ""
+                for item, value in obj.iteritems():
+                    if "tag_" in item:
+                        if value:
+                            if type(value) == unicode:
+                                value = ast.literal_eval(value)
+                            if value.get('stockSymbol') != "" and value.get('stockSymbol') and value.get('stockSymbol') in tickers:
+                                ticker = value['stockSymbol']
+                    
+                    elif "ticker" in item:
+                        ticker = value
+
+                if ticker != "":
+                    if ticker == "BRKA":
+                        ticker = "BRK.A"
+                if ticker and ticker != "":
+                    closest = min(stockTimes[ticker], key=lambda x: abs(x - pivot))
+                    if quarterly or (datetime.utcnow() - periodStart) > timedelta(weeks = 1):
+                        key = closest.strftime("%Y-%m-%d")
+                    else:
+                        key = closest.strftime("%Y-%m-%d %H:%M:%S")
+                    
+                    stockPrice = stockPrices[ticker][0][key]['1. open']
+                    
+                    if type(obj['sentiment']) == unicode:
+                        obj['sentiment'] = ast.literal_eval(obj['sentiment'])
+
+                    if obj['sentiment']['pos'] > obj['sentiment']['neg']:
+                        sentiment = "pos"
+                        print(buyStock(ticker, float(stockPrice), 5))
+                    else:
+                        sentiment = "neg"
+                        print(sellStock(ticker, float(stockPrice), 5))
+    return "Completed"
+
+                
+
+    
+
 
 def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False, quarterly=False, scatter=False):
     evaluations = []
@@ -269,6 +363,7 @@ def getDates(tree, numOfDocs):
             dates.append(myDate)
     
         return dates
+
 
 def getQuaterly():
     #10-Q filings - to be ran only ever few weeks or during close times?
@@ -646,7 +741,7 @@ def detailAnalysis(mongoID):
 
 @app.route('/json/messages')
 def getMessages():
-    if len(currentMessage) > 5:
+    if len(currentMessage) > 6:
         returnMessage = currentMessage.reverse()[:5]
     else:
         returnMessage = currentMessage.reverse()
@@ -787,6 +882,18 @@ def evaluateTicker(periodStart, periodEnd, periodDiff, ticker, quarterly, scatte
         evaluations = evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=ticker, quarterly=quarterly, scatter=scatter)
     
     return jsonify(evaluations)
+
+
+@app.route('/json/backtest/<periodStart>/<periodEnd>/<ticker>/<quarterly>')
+def runBacktestData(periodStart, periodEnd, ticker, quarterly):
+    periodStart = datetime.strptime(periodStart, '%Y-%m-%d')
+    periodEnd   = datetime.strptime(periodEnd, '%Y-%m-%d')
+    quarterly = False if quarterly == "false" else True
+    if ticker == "ALL":
+        returned = backtestData(periodStart, periodEnd, quarterly)
+    else:
+        returned = backtestData(periodStart, periodEnd, ticker, quarterly)
+    return jsonify(returned)
 
 @app.route('/dashboard')
 def index():
