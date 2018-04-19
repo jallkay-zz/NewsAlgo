@@ -766,9 +766,9 @@ def getAllTotal():
     shares = [obj['shares'] for obj in dbItems]
     tickers = [obj['ticker'] for obj in dbItems]
     core = ts.get_batch_stock_quotes(tickers)
-    invested = [shares * float(value['2. price']) for value, shares in zip(core[0], shares)]
-    for name, s, i in zip(tickers, shares, invested):
-        output[name] = s + i 
+    invested = [share * float(value['2. price']) for value, share in zip(core[0], shares)]
+    for name, i in zip(tickers, invested):
+        output[name] = i 
     return jsonify(output)
 
 @app.route('/json/<command>/<ticker>/<float:price>/<int:shares>')
