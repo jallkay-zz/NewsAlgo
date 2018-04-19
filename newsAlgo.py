@@ -114,9 +114,31 @@ def nextdoor(iterable):
         current_item = next_item
     yield (prev_item, current_item, None)
 
+def sellAllStock(date=None):
+    dbItems = list(db.stocks.find({}))
+    tickers = {}
+    for obj in dbItems:
+        tickers[obj['ticker']] = obj['shares']
+    if date:
+        stockPrices = {}
+        stockTimes = {}
+        for tic in tickers.iteritems():
+            stockPrices[tic[0]] = ts.get_daily(tic[0], outputsize='full')
+            stockTimes[tic[0]] = [datetime.strptime(name, "%Y-%m-%d") for name in stockPrices[tic[0]][0].iterkeys()]
+            print("got daily stock prices for %s" % tic[0])
+            pivot = datetime.strptime(date, "%Y-%m-%d")
+            closest = min(stockTimes[tic[0]], key=lambda x: abs(x - pivot))
+            key = closest.strftime("%Y-%m-%d")
+            price = stockPrices[tic[0]][0][key]['1. open']
+            myreturn = sellStock(tic[0], float(price), tic[1])
+            print myreturn
+    
+
+
+
 #pull in news 
 
-def backtestData(periodStart, periodEnd, ticker=False, quarterly=False):
+def backtestData(periodStart, periodEnd, ticker=False, quarterly=False, sellAtEnd=True):
 
     stockPrices = {}
     stockTimes = {}
@@ -198,12 +220,9 @@ def backtestData(periodStart, periodEnd, ticker=False, quarterly=False):
                     else:
                         sentiment = "neg"
                         print(sellStock(ticker, float(stockPrice), 5))
+    if sellAtEnd:
+        sellAllStock(periodEnd.strftime("%Y-%m-%d"))
     return "Completed"
-
-                
-
-    
-
 
 def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False, quarterly=False, scatter=False):
     evaluations = []
@@ -742,7 +761,8 @@ def detailAnalysis(mongoID):
 @app.route('/json/messages')
 def getMessages():
     if len(currentMessage) > 6:
-        returnMessage = currentMessage.reverse()[:5]
+        currentMessage.reverse()
+        returnMessage = currentMessage[:5]
     else:
         returnMessage = currentMessage.reverse()
     return jsonify(returnMessage)
@@ -779,6 +799,11 @@ def moveStock(command, ticker, price, shares):
         response = buyStock(ticker, price, shares)
     print(response)
     return jsonify(response)
+
+@app.route('/json/sellallstock/<date>')
+def sellAllStockEndpoint(date):
+    sellAllStock(date)
+    return jsonify("True")
 
 @app.route('/json/stock/<type>/<symbol>')
 def stock(type, symbol):
@@ -884,15 +909,16 @@ def evaluateTicker(periodStart, periodEnd, periodDiff, ticker, quarterly, scatte
     return jsonify(evaluations)
 
 
-@app.route('/json/backtest/<periodStart>/<periodEnd>/<ticker>/<quarterly>')
-def runBacktestData(periodStart, periodEnd, ticker, quarterly):
+@app.route('/json/backtest/<periodStart>/<periodEnd>/<ticker>/<quarterly>/<sellAtEnd>')
+def runBacktestData(periodStart, periodEnd, ticker, quarterly, sellAtEnd):
     periodStart = datetime.strptime(periodStart, '%Y-%m-%d')
     periodEnd   = datetime.strptime(periodEnd, '%Y-%m-%d')
     quarterly = False if quarterly == "false" else True
+    sellAtEnd = False if sellAtEnd == "false" else True
     if ticker == "ALL":
-        returned = backtestData(periodStart, periodEnd, quarterly)
+        returned = backtestData(periodStart, periodEnd, quarterly, sellAtEnd=sellAtEnd)
     else:
-        returned = backtestData(periodStart, periodEnd, ticker, quarterly)
+        returned = backtestData(periodStart, periodEnd, ticker, quarterly, sellAtEnd=sellAtEnd)
     return jsonify(returned)
 
 @app.route('/dashboard')
