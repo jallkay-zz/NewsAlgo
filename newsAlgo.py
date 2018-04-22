@@ -50,10 +50,10 @@ splits = [('.s', 'D'), ("'s", 'D'), ('Inc', 'K')]
 
 def splitTickerFunds():
     size = len(stockSymbols.values)
-    stockobjs = db.stocks.find({})
+    stockobjs = list(db.stocks.find({}))
     if len(stockobjs) == size:
         for obj in stockobjs:
-            obj['funds'] = initfunds / size
+            obj['funds'] = initFunds / size
             obj['shares'] = 0
             db.stocks.update( { "_id" : obj['_id'] } , { "$set" : obj})
     else:
@@ -255,10 +255,10 @@ def backtestData(periodStart, periodEnd, ticker=False, quarterly=False, sellAtEn
                     
                     stockPrice = stockPrices[ticker][0][key]['1. open']
                     
-                    if type(obj['sentiment']) == unicode:
-                        obj['sentiment'] = ast.literal_eval(obj['sentiment'])
+                    #if type(obj['sentiment']) == unicode:
+                    #    obj['sentiment'] = ast.literal_eval(obj['sentiment'])
 
-                    if obj['sentiment']['pos'] > obj['sentiment']['neg']:
+                    if str(obj['newSentiment']) == "pos":
                         sentiment = "pos"
                         print(buyStock(ticker, float(stockPrice), 5))
                     else:
@@ -709,13 +709,8 @@ def trainNewsSentiment(firstTime = False):
         print "starting training sentiment"
         data = list(db.trainNews.find({}))
         train = [(obj['title'] + ' ' + obj['description'], obj['newSentiment']) for obj in data]
-        # Step 2
         mydictionary['news'] = set(word.lower() for passage in train for word in word_tokenize(passage[0]))
-        
-        # Step 3
         t = [({word: (word in word_tokenize(x[0])) for word in mydictionary}, x[1]) for x in train]
-        
-        # Step 4 – the classifier is trained with sample data
         classifier['news'] = nltk.NaiveBayesClassifier.train(t)
         print "Completed training sentiment"
 
@@ -1035,7 +1030,7 @@ def runBacktestData(periodStart, periodEnd, ticker, quarterly, sellAtEnd):
 def index():
     return render_template('index.html', header="")
 
-# ONLY USE WHEN YOURE OVERRITING THE CSV
+# ONLY USE WHEN YOURE OVERRITING THE DB
 @app.route('/json/all')
 def getAllData():
     progress = 0
