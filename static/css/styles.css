@@ -357,6 +357,24 @@ input.options {
   padding: 10px;
 }
 
+#overrideSentiment {
+  position: absolute;
+  bottom: 35px;
+  width: 100%;
+}
+
+#overridePos {
+  left: 5px;
+  float: left;
+  position: absolute;
+}
+
+#overrideNeg {
+  right: 5px;
+  float: right;
+  position: absolute;
+}
+
 .options-graph {.options-main
   p {      float: left;
   font-size: 14px;

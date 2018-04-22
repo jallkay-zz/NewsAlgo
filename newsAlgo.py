@@ -6,6 +6,7 @@ import threading
 from alpha_vantage.timeseries import TimeSeries
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer as sentAnalysis
+from nltk.tokenize import word_tokenize
 import ast
 from numpy import isnan
 import wikipedia as wiki
@@ -40,6 +41,8 @@ stockSymbols = {}
 initFunds = 25000.00
 
 currentMessage = []
+classifier = {}
+mydictionary = {}
 
 overrideData = True
 gotQuarterly = False
@@ -47,12 +50,20 @@ splits = [('.s', 'D'), ("'s", 'D'), ('Inc', 'K')]
 
 def splitTickerFunds():
     size = len(stockSymbols.values)
-    for ticker in stockSymbols.values:
-        stocks = {}
-        stocks['ticker'] = ticker[0]
-        stocks['funds'] = initFunds / size
-        stocks['shares'] = 0
-        db.stocks.insert(stocks)
+    stockobjs = db.stocks.find({})
+    if len(stockobjs) == size:
+        for obj in stockobjs:
+            obj['funds'] = initfunds / size
+            obj['shares'] = 0
+            db.stocks.update( { "_id" : obj['_id'] } , { "$set" : obj})
+    else:
+        db.stocks.delete_many({})
+        for ticker in stockSymbols.values:
+            stocks = {}
+            stocks['ticker'] = ticker[0]
+            stocks['funds'] = initFunds / size
+            stocks['shares'] = 0
+            db.stocks.insert(stocks)
     
 def buyStock(ticker, price, shares):
     obj = db.stocks.find({ "ticker" : ticker })[0]
@@ -132,11 +143,44 @@ def sellAllStock(date=None):
             price = stockPrices[tic[0]][0][key]['1. open']
             myreturn = sellStock(tic[0], float(price), tic[1])
             print myreturn
-    
+
+def updateNewsObject(obj):
+     obj['_id'] = ObjectId(obj['_id'])
+     db.myCollection.update( { "_id" : obj['_id'] } , { "$set" : obj})
+     print "Updated obj %s in news db" % obj['_id']
+
+def updateQuarterlyObject(obj):
+     obj['_id'] = ObjectId(obj['_id'])
+     db.quaterly.update( { "_id" : obj['_id'] } , { "$set" : obj})
+     print "Updated obj %s in quarterly db" % obj['_id']
+
+def updateNewsTrainObject(obj):
+    returnData = list(db.trainNews.find({"refid" : str(obj['_id'])}))
+    if len(returnData) > 0:
+        returnData = returnData[0]
+        returnData['newSentiment'] = obj['newSentiment']
+        db.trainNews.update( { "_id" : returnData['_id'] } , { "$set" : returnData})
+        print "Amended obj %s in train news db" % returnData['_id']
+    else:
+        obj['refid'] = str(obj['_id'])
+        del obj['_id']
+        db.trainNews.insert(obj)
+        print "Added obj %s to train news db" % obj['_id']
+
+def updateQuarterlyTrainObject(obj):
+    returnData = list(db.train10Q.find({"refid" : id}))
+    if len(returnData) > 0:
+        returnData['newSentiment'] = obj['newSentiment']
+        db.train10Q.update( { "_id" : returnData['_id'] } , { "$set" : returnData})
+        print "Amended obj %s in train 10Q db" % returnData['_id']
+    else:
+        obj['refid'] = str(obj['_id'])
+        del obj['_id']
+        db.train10Q.insert(obj)
+        print "Added obj %s to train 10Q db" % obj['_id']
 
 
 
-#pull in news 
 
 def backtestData(periodStart, periodEnd, ticker=False, quarterly=False, sellAtEnd=True):
 
@@ -235,6 +279,10 @@ def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False, quarterl
     stockPrices = {}
     stockTimes = {}
     stockTimesEnd = {}
+
+    counter = 0
+    positive = 0
+    negative = 0
     if ticker == False or ticker == None:
         tickers = [name[0].upper() for name in stockSymbols.values]
     else:
@@ -296,7 +344,9 @@ def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False, quarterl
                 if ticker != "":
                     if ticker == "BRKA":
                         ticker = "BRK.A"
-
+                    
+                    counter = counter + 1
+    
                     if scatter:
 
                         for i in range(1, periodDiff):
@@ -316,12 +366,15 @@ def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False, quarterl
                             startPrice = stockPrices[ticker][0][key]['1. open']
                             endPrice   = stockPrices[ticker][0][keyEnd]['1. open']
 
-                            if type(obj['sentiment']) == unicode:
-                                obj['sentiment'] = ast.literal_eval(obj['sentiment'])
-                            if obj['sentiment']['pos'] > obj['sentiment']['neg']:
-                                sentiment = "pos"
-                            else:
-                                sentiment = "neg"
+                            # if type(obj['sentiment']) == unicode:
+                            #     obj['sentiment'] = ast.literal_eval(obj['sentiment'])
+                            # if obj['sentiment']['pos'] > obj['sentiment']['neg']:
+                            #     sentiment = "pos"
+                            # else:
+                            #     sentiment = "neg"
+
+                            sentiment = str(obj['newSentiment'])
+
                             scatterEnd = 'Day' + str(i) if len(str(i)) == 2 else 'Day 0' + str(i)
                             if endPrice > startPrice and sentiment == "pos":
                                 if not evaluations['pos'].get(scatterEnd):
@@ -353,12 +406,21 @@ def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False, quarterl
                         startPrice = stockPrices[ticker][0][key]['1. open']
                         endPrice   = stockPrices[ticker][0][keyEnd]['1. open']
 
-                        if type(obj['sentiment']) == unicode:
-                            obj['sentiment'] = ast.literal_eval(obj['sentiment'])
-                        if obj['sentiment']['pos'] > obj['sentiment']['neg']:
-                            sentiment = "pos"
-                        else:
-                            sentiment = "neg"
+                        sentiment = str(obj['newSentiment'])
+                        if sentiment == "pos":
+                            positive = positive + 1
+                        elif sentiment == "neg":
+                            negative = negative + 1
+                        #if type(obj['sentiment']) == unicode:
+                        #    obj['sentiment'] = ast.literal_eval(obj['sentiment'])
+                        #if obj['sentiment']['pos'] > obj['sentiment']['neg']:
+                        #    sentiment = "pos"
+                        #    positive = positive + 1
+                        #elif obj['sentiment']['pos'] == obj['sentiment']['neg']:
+                        #    sentiment = "neu"
+                        #else:
+                        #    sentiment = "neg"
+                        #    negative = negative + 1
 
                         if endPrice > startPrice and sentiment == "pos":
                             evaluations.append(True)
@@ -367,6 +429,9 @@ def evaluateSentiment(periodStart, periodEnd, periodDiff, ticker=False, quarterl
                         else:
                             evaluations.append(False)
     print("finished evaluating data, returning")
+    print "positive %i" % positive
+    print "negative %i" % negative
+    print "total    %i" % counter
     return evaluations
                 
 
@@ -457,7 +522,7 @@ def getNews(firstRun = False):
     if not gotQuarterly:
         getQuaterly()
          
-
+    
     for source in newsSources:
 
         goBack = datetime.strftime(date.today() - timedelta(days = 5), "%Y-%m-%d")
@@ -489,15 +554,20 @@ def getNews(firstRun = False):
 
 def composeTag(article):
     analysis = convert(getAnalysis(article))
-    article['tags'] = ''.join(str(a) + ',' for a in analysis.keys())
+    article['tags'] = ''
     for name, desc in analysis.iteritems():
         tagDict = {}
-        tagDict['desc'] = desc if desc else ""
-        tagDict['name'] = name if name else ""
+        if getStockSymbol(name):
+            stock = True
+        else:
+            stock = False
+        tagDict['desc'] = desc if desc and stock else ""
+        tagDict['name'] = name if name and stock else ""
         tagDict['stockSymbol'] = getStockSymbol(name) if getStockSymbol(name) else ""
         tagDict['type'] = 'Other'
         article['tag_' +  str(([i for i,x in enumerate(analysis.keys()) if x == name])[0])] = tagDict
-
+        if stock:
+            article['tags'] = article['tags'] + name + ','
     if len(analysis) < 10:
         for i in range(len(analysis), 11):
             article['tag_' + str(i)] = {}
@@ -507,6 +577,7 @@ def composeTag(article):
             article['tag_' + str(i)]['type'] = 'Other'
     if article.get('title') and article.get('description'):
         article['sentiment'] = getSentiment(article.get('title') + ' ' + article.get('description'))
+        article['newSentiment'] = getNewSentiment(article.get('title') + ' ' + article.get('description'))
     
     return article
 
@@ -541,7 +612,8 @@ def getDict(item):
         if 'sentiment' in name:
             if type(value) == unicode:
                 value = ast.literal_eval(value)
-            del value['compound']
+            if type(value) == dict:
+                del value['compound']
         if type(value) == float:
             value = "" if isnan(value) else value
         itemDict[name] = value
@@ -561,44 +633,59 @@ def getAnalysis(newsArticle):
     finished      = False
     currentWord   = ''
     if newsArticle.get('title') and newsArticle.get('description'):
-        tokenised     = nltk.pos_tag(nltk.word_tokenize(newsArticle['title'].replace('-', ' ') + ' ' + newsArticle['description'].replace('-', ' ')))
-        tokeniseddict = OrderedDict( tokenised )
-        for prev, item, next in nextdoor(tokenised):
-            if item[1] == "NNP" or item[1] == "CC":
-                for split in splits:
-                    if split[0] in item[0]:
-                        currentWord += ' ' if currentWord <> '' else ''
-                        currentWord += item[0]
-                        if split[1] == 'D': 
-                            currentWord = currentWord.split(split[0])[0]
-                        finished = True
-                        break
-                if not finished:
-                    if currentWord == '':
-                        if item[1] == "CC":
-                            continue
-                        else:
-                            currentWord += ' ' if currentWord <> '' else ''
-                            currentWord += item[0] 
-                            finished = False
-                            if next:
-                                if next[1] <> "NNP" and next[1] <> "CC":
-                                    finished = True
-                    elif currentWord.lower() in [name[2].lower() for name in stockSymbols.values]: 
-                        finished = True
-                        break
-                    else: 
-                        currentWord += ' ' if currentWord <> '' else ''
-                        currentWord += item[0] 
-                        finished = False
-                        if next:
-                            if next[1] <> "NNP" and next[1] <> "CC":
-                                finished = True
+        #tokenised     = nltk.pos_tag(nltk.word_tokenize(newsArticle['title'].replace('-', ' ') + ' ' + newsArticle['description'].replace('-', ' ')))
+        #tokeniseddict = OrderedDict( tokenised )
+        mystring = str(newsArticle['title'].replace('-', ' ') + ' ' + newsArticle['description'].replace('-', ' '))
+        tickers = {}
+        for name in stockSymbols.values:
+            tickers[name[2].lower()] = name[1]
 
-            if finished:
-                wikiReturn = callWiki(currentWord, wikiReturn)
-                currentWord = ''
-                finished = False
+        override = False
+        for tic in tickers.iteritems():
+            if tic[0].lower() in mystring.lower():
+                currentWord = tic[1]
+                override = True
+                finished = True
+        # for prev, item, next in nextdoor(tokenised):
+        #     if override:
+        #         finished = True
+    
+        #     elif item[1] == "NNP" or item[1] == "CC":
+        #         for split in splits:
+        #             if split[0] in item[0]:
+        #                 currentWord += ' ' if currentWord <> '' else ''
+        #                 currentWord += item[0]
+        #                 if split[1] == 'D': 
+        #                     currentWord = currentWord.split(split[0])[0]
+        #                 finished = True
+        #                 break
+        #         if not finished:
+        #             if currentWord == '':
+        #                 if item[1] == "CC":
+        #                     continue
+        #                 else:
+        #                     currentWord += ' ' if currentWord <> '' else ''
+        #                     currentWord += item[0] 
+        #                     finished = False
+        #                     if next:
+        #                         if next[1] <> "NNP" and next[1] <> "CC":
+        #                             finished = True
+        #             elif len(currentWord.lower()) > 1 and currentWord.lower() in [name[2].lower() for name in stockSymbols.values]: 
+        #                 finished = True
+        #                 break
+        #             else: 
+        #                 currentWord += ' ' if currentWord <> '' else ''
+        #                 currentWord += item[0] 
+        #                 finished = False
+        #                 if next:
+        #                     if next[1] <> "NNP" and next[1] <> "CC":
+        #                         finished = True
+
+        if finished:
+            wikiReturn = { currentWord : 'Test' }
+            currentWord = ''
+            finished = False
+            override = False
     return wikiReturn
 
 
@@ -608,6 +695,29 @@ def getSentiment(content):
     sentiment = sid.polarity_scores(content)
     return sentiment
 
+def getNewSentiment(context):
+    str_features = {word.lower(): (word in word_tokenize(context.lower())) for word in mydictionary['news']}
+    sentiment = classifier['news'].classify(str_features)
+
+    return sentiment
+
+def trainNewsSentiment(firstTime = False):
+    if firstTime:
+        print "delaying start of training sentiment"
+        threading.Timer(600, trainNewsSentiment).start()
+    else:
+        print "starting training sentiment"
+        data = list(db.trainNews.find({}))
+        train = [(obj['title'] + ' ' + obj['description'], obj['newSentiment']) for obj in data]
+        # Step 2
+        mydictionary['news'] = set(word.lower() for passage in train for word in word_tokenize(passage[0]))
+        
+        # Step 3
+        t = [({word: (word in word_tokenize(x[0])) for word in mydictionary}, x[1]) for x in train]
+        
+        # Step 4 – the classifier is trained with sample data
+        classifier['news'] = nltk.NaiveBayesClassifier.train(t)
+        print "Completed training sentiment"
 
 @app.route('/json/reset/tickerfunds')
 def resetTickerFunds():
@@ -773,10 +883,10 @@ def getTotal():
     available = sum([obj['funds'] for obj in dbItems])
     shares = [obj['shares'] for obj in dbItems]
     tickers = [obj['ticker'] for obj in dbItems]
-    core = ts.get_batch_stock_quotes(tickers)
-    invested = sum([shares * float(value['2. price']) for value, shares in zip(core[0], shares)])
+    #core = ts.get_batch_stock_quotes(tickers)
+    #invested = sum([shares * float(value['2. price']) for value, shares in zip(core[0], shares)])
 
-    total = available + invested
+    total = available# + invested
     return jsonify("$" + str(total))
 
 @app.route('/json/totalall')
@@ -916,9 +1026,9 @@ def runBacktestData(periodStart, periodEnd, ticker, quarterly, sellAtEnd):
     quarterly = False if quarterly == "false" else True
     sellAtEnd = False if sellAtEnd == "false" else True
     if ticker == "ALL":
-        returned = backtestData(periodStart, periodEnd, quarterly, sellAtEnd=sellAtEnd)
+        returned = backtestData(periodStart, periodEnd, quarterly=quarterly, sellAtEnd=sellAtEnd)
     else:
-        returned = backtestData(periodStart, periodEnd, ticker, quarterly, sellAtEnd=sellAtEnd)
+        returned = backtestData(periodStart, periodEnd, ticker=ticker, quarterly=quarterly, sellAtEnd=sellAtEnd)
     return jsonify(returned)
 
 @app.route('/dashboard')
@@ -926,26 +1036,41 @@ def index():
     return render_template('index.html', header="")
 
 # ONLY USE WHEN YOURE OVERRITING THE CSV
-# @app.route('/json/all')
-# def getAllData():
-#     mainDict = []
-#     progress = 0
-#     for rawItem in mainDF.values:
-#         progress = progress + 1
-#         print 'progress: ' + str(progress)
-#         item = getDict(rawItem)
-#         mainDict.append(composeTag(item))
-    
-#     frame = pandas.DataFrame.from_dict(mainDict)
-#     frame.to_csv('data.csv')
-#     return jsonify(mainDict)
-    
+@app.route('/json/all')
+def getAllData():
+    progress = 0
+    data = list(db.myCollection.find({}))
+    for rawItem in data:
+        progress = progress + 1
+        print 'progress: ' + str(progress)
+        item = getDict(rawItem)
+        myItem = composeTag(item)
+        updateNewsObject(myItem)
+
+@app.route('/json/sentiment/<id>/<polarity>')
+def updateSentimentObject(id, polarity):
+    # Update existing object
+    returnData = list(db.myCollection.find({"_id" : ObjectId(id)}))
+    if len(returnData) > 0:
+        returnData = returnData[0]
+        returnData['newSentiment'] = polarity
+        updateNewsObject(returnData)
+        updateNewsTrainObject(returnData)
+    else:
+        returnData = db.quaterly.find({"_id" : ObjectId(id)})[0]
+        returnData['newSentiment'] = polarity
+        updateQuarterlyObject(returnData)
+        updateQuarterlyTrainObject(returnData)
+
+    return "True"
+
 
 if __name__ == "__main__":
     stockSymbols = pandas.DataFrame.from_csv('shortListedStocks.csv', header=0)
     client = pymongo.MongoClient(uri)
     db = client.get_default_database()
     getNews(firstRun = True)
+    trainNewsSentiment(firstTime = True)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
     

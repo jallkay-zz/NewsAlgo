@@ -97,7 +97,7 @@
 																					<div id="desc"></div>
 																					<div id="tags"></div>
 																					<div id="tag_desc"></div>
-																					
+																					<div id="sentOverride"></div>
 																				</div>
 																				</li>
 					<li data-row="1" data-col="1" data-sizex="3" data-sizey="2"><div class="draggable">
@@ -578,6 +578,7 @@
 					success: function(data) {
 						var tags = data['tags'].split(',')
 						var output = '';
+						var sentOutput = '';
 						var descOutput = [];
 						for (var i = 0, l = tags.length - 1; i < l; i++) {
 							if(data['tag_' + i ]['stockSymbol']) {
@@ -588,12 +589,14 @@
 							}
 							descOutput += "<div class='d_tag_" + i + "'><p>" + data['tag_' + i]['desc'] + "</p></div>";
 						}
-						
+						sentOutput += "<div id='overrideSentiment' class='override'><button class='override' id='overridePos' onclick=changeSentiment('" + indexNumber + "','pos')>Positive</button>";
+						sentOutput += "<button class='override' id='overrideNeg' onclick=changeSentiment('" + indexNumber + "','neg')>Negative</button></div>";
 						if (window.sentimentChart.chart) {
 							window.sentimentChart.chart.destroy();
 						}
 						$("#tags").html(output);
 						$("#tag_desc").html(descOutput);
+						$("#sentOverride").html(sentOutput);
 						var sctx = document.getElementById("sentimentChart").getContext('2d');
 						window.sentimentChart = new Chart(sctx,{
 							type: 'pie',
@@ -766,6 +769,22 @@
 					$($(obj).parent().parent().children()[2]).css({"display" : "none"});
 				}
 			
+			}
+
+			function changeSentiment(id, polarity) {
+				$.ajax({
+					type: "GET",
+					url: 'json/sentiment/' + id + '/' + polarity,
+					dataType: 'json',
+					success: function(data) {
+						if(polarity == "neg") {
+							$('#overrideNeg')[0].innerHTML = 'Completed'
+						}
+						else {
+							$('#overridePos')[0].innerHTML = 'Completed'
+						}
+					}
+				});
 			}
 
 
