@@ -168,7 +168,7 @@ def updateNewsTrainObject(obj):
         print "Added obj %s to train news db" % obj['_id']
 
 def updateQuarterlyTrainObject(obj):
-    returnData = list(db.train10Q.find({"refid" : id}))
+    returnData = list(db.train10Q.find({"refid" : obj['_id']}))
     if len(returnData) > 0:
         returnData['newSentiment'] = obj['newSentiment']
         db.train10Q.update( { "_id" : returnData['_id'] } , { "$set" : returnData})
@@ -449,7 +449,7 @@ def getDates(tree, numOfDocs):
         return dates
 
 
-def getQuaterly():
+def getQuaterly(override=False):
     #10-Q filings - to be ran only ever few weeks or during close times?
     newsSources = [name[2].lower() for name in stockSymbols.values]
     tickers = [name[0].upper() for name in stockSymbols.values]
@@ -474,16 +474,17 @@ def getQuaterly():
         for report in data:
             if report['date'] in dates:
                 trueCount += 1 
-        if trueCount == len(dates):
-            print("Already have all data for %s (length %i)" % (ticker, trueCount))
-            continue
+        if trueCount == len(dates) and not override:
+            if not override:
+                print("Already have all data for %s (length %i)" % (ticker, trueCount))
+                continue
         else:
             docs = edgar.getDocuments(tree, noOfDocuments=5)
             papers = [''.join(doc) for doc in docs]
             papers = [unicodedata.normalize("NFKD", pap) for pap in papers]
             
             print("Got papers from %s %s" % (source, ticker))
-            sentiments = [getSentiment(pap) for pap in papers]
+            sentiments = [getNew10QSentiment(pap) for pap in papers]
             print("Got sentiments from %s %s" % (source, ticker))
             
             for d, s in zip(dates, sentiments):
@@ -713,6 +714,57 @@ def trainNewsSentiment(firstTime = False):
         t = [({word: (word in word_tokenize(x[0])) for word in mydictionary}, x[1]) for x in train]
         classifier['news'] = nltk.NaiveBayesClassifier.train(t)
         print "Completed training sentiment"
+
+def getNew10QSentiment(context):
+    str_features = {word.lower(): (word in word_tokenize(context.lower())) for word in mydictionary['10Q']}
+    sentiment = classifier['10Q'].classify(str_features)
+
+    return sentiment
+
+def train10QSentiment(firstTime = False):
+    if firstTime:
+        print "delaying start of training sentiment for 10Q"
+        threading.Timer(600, train10QSentiment).start()
+    else:
+        print "starting training sentiment for 10Q"
+        newsSources = [name[2].lower() for name in stockSymbols.values]
+        tickers = [name[0].upper() for name in stockSymbols.values]
+        cik = [name[7] for name in stockSymbols.values]
+        myPapers = {}
+        for source, cik, ticker in zip(newsSources, cik, tickers):
+            if '.' in ticker:
+                ticker = ticker.replace('.', '')
+            ciklen = len(str(int(cik))) 
+            if not ciklen == 10:
+                newcik = ""
+                for i in range (0, 10-ciklen):
+                    newcik += "0"
+            cik = newcik + str(cik)
+            
+            company = edgar.Company(source, cik)
+            tree = company.getAllFilings(filingType = "10-Q")
+            dates = getDates(tree, 5)
+
+            data = list(db.quaterly.find({ "ticker" : ticker }))
+            docs = edgar.getDocuments(tree, noOfDocuments=5)
+            papers = [''.join(doc) for doc in docs]
+            papers = [unicodedata.normalize("NFKD", pap) for pap in papers]
+            myPapers[ticker] = [(date, paper) for date, paper in zip(dates, papers)]
+            print("Got papers from %s %s" % (source, ticker))
+
+        data = list(db.train10Q.find({}))
+        for i, d in enumerate(data):
+            for articleDate, article in myPapers[d['ticker']]:
+                if articleDate == str(d['date']):
+                    data[i]['article'] = article
+
+        train = [(obj['article'], obj['newSentiment']) for obj in data]
+        mydictionary['10Q'] = set(word.lower() for passage in train for word in word_tokenize(passage[0]))
+        t = [({word: (word in word_tokenize(x[0])) for word in mydictionary}, x[1]) for x in train]
+        classifier['10Q'] = nltk.NaiveBayesClassifier.train(t)
+        print "Completed training sentiment for 10Q"
+
+
 
 @app.route('/json/reset/tickerfunds')
 def resetTickerFunds():
@@ -1041,6 +1093,12 @@ def getAllData():
         item = getDict(rawItem)
         myItem = composeTag(item)
         updateNewsObject(myItem)
+    return "True"
+
+@app.route('/json/10Q/all')
+def getAll10QData():
+    getQuaterly(override=True)
+    return "True"
 
 @app.route('/json/sentiment/<id>/<polarity>')
 def updateSentimentObject(id, polarity):
@@ -1066,6 +1124,7 @@ if __name__ == "__main__":
     db = client.get_default_database()
     getNews(firstRun = True)
     trainNewsSentiment(firstTime = True)
+    train10QSentiment(firstTime = True)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
     
