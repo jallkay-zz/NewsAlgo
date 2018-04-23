@@ -484,7 +484,7 @@ def getQuaterly(override=False):
             papers = [unicodedata.normalize("NFKD", pap) for pap in papers]
             
             print("Got papers from %s %s" % (source, ticker))
-            sentiments = [getNew10QSentiment(pap) for pap in papers]
+            sentiments = [getSentiment(pap) for pap in papers]
             print("Got sentiments from %s %s" % (source, ticker))
             
             for d, s in zip(dates, sentiments):
