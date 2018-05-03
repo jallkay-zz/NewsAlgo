@@ -374,7 +374,9 @@ input.options {
   float: right;
   position: absolute;
 }
-
+li.gs_w {
+  overflow: inherit;
+}
 .tracking-filter {
   color: white;
   font-size: 10pt;

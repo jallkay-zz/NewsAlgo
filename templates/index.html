@@ -832,9 +832,9 @@
 				var percentage = 100 - ((time / 14) * 100);
 
 				window.myChart._min = goback;
-				$('.noUi-connect')[0].style.left = percentage + '%';
+				$('.noUi-connect').animate({"left" : percentage + '%'});
 				window.myChart._max = totalSize;
-				$('.noUi-background')[1].style.left = "100%"
+				$($('.noUi-background')[1]).animate({"left" : '100%'});
 				window.myChart._draw(window.myChart.chart, window.myChart._getData(window.myChart._min, window.myChart._max), window.myChart.chartOpts, window.myChart.options)
 			}
 			
