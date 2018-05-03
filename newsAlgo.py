@@ -930,10 +930,10 @@ def getTotal():
     available = sum([obj['funds'] for obj in dbItems])
     shares = [obj['shares'] for obj in dbItems]
     tickers = [obj['ticker'] for obj in dbItems]
-    #core = ts.get_batch_stock_quotes(tickers)
-    #invested = sum([shares * float(value['2. price']) for value, shares in zip(core[0], shares)])
+    core = ts.get_batch_stock_quotes(tickers)
+    invested = sum([shares * float(value['2. price']) for value, shares in zip(core[0], shares)])
 
-    total = available# + invested
+    total = available + invested
     return jsonify("$" + str(total))
 
 @app.route('/json/totalall')

@@ -103,6 +103,11 @@
 					<li data-row="1" data-col="1" data-sizex="3" data-sizey="2"><div class="draggable">
 																					<subtitle>Tracking</subtitle>
 																					<div class="ticker-focus"></div>
+																					<div class="tracking-filter">
+																						<div id="tracking-1d" class="tracking-filter-child" onclick="filterTracking(1)">1D</div>
+																						<div id="tracking-7d" class="tracking-filter-child" onclick="filterTracking(7)">1W</div>
+																						<div id="tracking-14d" class="tracking-filter-child" onclick="filterTracking(14)">2W</div>
+																					</div>
 																					<div class="widget-menu">
 																						<div class="clear-menu-btn">
 																							<input type="checkbox" onchange="changeoptions(this)">
@@ -490,7 +495,7 @@
 						else if (args == false) {
 							var ctx = document.getElementById("myChart").getContext('2d');
 
-
+							$('.tracking-filter')[0].style.display = "inline-flex";
 							$('.ticker-focus')[0].innerHTML = stockSymbol;
 							window.myChart = new RangeSliderChart({
 								chartCTX: ctx,
@@ -624,6 +629,7 @@
 							window.myChart.chart.destroy();
 							window.myChart.sliderElement.remove();
 							$('.ticker-focus')[0].innerHTML = "";
+							$('.tracking-filter')[0].style.display = "none";
 						}
 						
 						
@@ -806,7 +812,31 @@
 			$('.menu').click (function(){
 				$(this).toggleClass('open');
 			});
+			
 
+			function filterTracking(time) {
+				var totalSize = window.myChart.datasets.datasets[0].pointStyle.length;
+				var idx = window.myChart.datasets.labels[totalSize-1];
+				var mydate = new Date(idx);
+				mydate.setDate((mydate.getDate() - (time - 1)));
+				if(mydate.getDay()%6==0) {
+					mydate.setDate((mydate.getDate() - (1)));
+					if(mydate.getDay()%6==0) {
+						mydate.setDate((mydate.getDate() - (1)));
+					}
+				}
+				mydate.setHours(10);
+				mydate.setMinutes(30);
+				var mydatestr = mydate.toISOString().replace('T', ' ').replace('.000Z', '');
+				var goback = window.myChart.datasets.labels.indexOf(mydate.toISOString().replace('T', ' ').replace('.000Z', ''));
+				var percentage = 100 - ((time / 14) * 100);
+
+				window.myChart._min = goback;
+				$('.noUi-connect')[0].style.left = percentage + '%';
+				window.myChart._max = totalSize;
+				$('.noUi-background')[1].style.left = "100%"
+				window.myChart._draw(window.myChart.chart, window.myChart._getData(window.myChart._min, window.myChart._max), window.myChart.chartOpts, window.myChart.options)
+			}
 			
 		</script>
 	</body>

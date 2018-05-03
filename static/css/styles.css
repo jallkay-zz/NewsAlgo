@@ -375,6 +375,22 @@ input.options {
   position: absolute;
 }
 
+.tracking-filter {
+  color: white;
+  font-size: 10pt;
+  display: none;
+  float: right;
+  padding-right: 300px;
+}
+
+.tracking-filter-child {
+  padding: 15px 15px 0px 0px;
+}
+
+.tracking-filter-child:hover {
+  color: black;
+}
+
 .options-graph {.options-main
   p {      float: left;
   font-size: 14px;
