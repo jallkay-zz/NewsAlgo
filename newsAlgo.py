@@ -1172,7 +1172,6 @@ if __name__ == "__main__":
     db = client.get_default_database()
     getNews(firstRun = True)
     trainNewsSentiment(firstTime = True)
-    train10QSentiment(firstTime = True)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
     
