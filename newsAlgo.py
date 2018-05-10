@@ -534,7 +534,7 @@ def getNews(firstRun = False):
         if returned:
             jsonconvert = json.loads(returned)
             converted   = convert(jsonconvert)
-            
+            tickers = [name[0].upper() for name in stockSymbols.values]
             for article in converted['articles']:
                 myData = None
                 count = count + 1
@@ -547,9 +547,10 @@ def getNews(firstRun = False):
 
                 if myData:
                     print("added article from %s to data" % source)
-                    stockPrice = ts.get_intraday(tic, interval='15min', outputsize='full')
+                    
                     pivot = datetime.strptime(myData['publishedAt'], '%Y-%m-%dT%H:%M:%SZ') if len(myData['publishedAt']) == 20 else datetime.strptime(myData['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
                     ticker = ""
+                   
                     for item, value in myData.iteritems():
                         if "tag_" in item:
                             if value:
@@ -565,18 +566,17 @@ def getNews(firstRun = False):
                         if ticker == "BRKA":
                             ticker = "BRK.A"
                     if ticker and ticker != "":
-                        closest = min(stockTimes[ticker], key=lambda x: abs(x - pivot))
-                        if quarterly or (datetime.utcnow() - periodStart) > timedelta(weeks = 1):
-                            key = closest.strftime("%Y-%m-%d")
-                        else:
-                            key = closest.strftime("%Y-%m-%d %H:%M:%S")
+                        stockPrices = ts.get_intraday(ticker, interval='15min', outputsize='full')
+                        stockTimes = [datetime.strptime(name, "%Y-%m-%d %H:%M:%S") for name in stockPrices[0].iterkeys()]
+                        closest = min(stockTimes, key=lambda x: abs(x - pivot))
+                        key = closest.strftime("%Y-%m-%d %H:%M:%S")
                         
-                        stockPrice = stockPrices[ticker][0][key]['1. open']
+                        stockPrice = stockPrices[0][key]['1. open']
                         
                         #if type(obj['sentiment']) == unicode:
                         #    obj['sentiment'] = ast.literal_eval(obj['sentiment'])
 
-                        if str(obj['newSentiment']) == "pos":
+                        if str(myData['newSentiment']) == "pos":
                             sentiment = "pos"
                             print(buyStock(ticker, float(stockPrice), 5))
                         else:
@@ -1170,8 +1170,8 @@ if __name__ == "__main__":
     stockSymbols = pandas.DataFrame.from_csv('shortListedStocks.csv', header=0)
     client = pymongo.MongoClient(uri)
     db = client.get_default_database()
-    getNews(firstRun = True)
     trainNewsSentiment(firstTime = True)
+    getNews(firstRun = True)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
     
