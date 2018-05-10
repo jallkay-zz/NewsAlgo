@@ -17,7 +17,8 @@
         "PercentCompleteBar": PercentCompleteBarFormatter,
         "YesNo": YesNoFormatter,
         "Checkmark": CheckmarkFormatter,
-        "Checkbox": CheckboxFormatter
+        "Checkbox": CheckboxFormatter,
+        "Currency": CurrencyFormatter
 
       }
     }
@@ -61,5 +62,19 @@
 
   function CheckmarkFormatter(row, cell, value, columnDef, dataContext) {
     return value ? "<img src='../images/tick.png'>" : "";
+  }
+
+  function CurrencyFormatter(row, cell, value, columnDef, dataContext) {
+
+    if (value === null || value === "" || !(value > 0)) {
+
+      return "$" + Number();
+
+    } else {
+
+    return "$" + Number(value).toFixed(2);
+
+    }
+
   }
 })(jQuery);

@@ -547,6 +547,42 @@ def getNews(firstRun = False):
 
                 if myData:
                     print("added article from %s to data" % source)
+                    stockPrice = ts.get_intraday(tic, interval='15min', outputsize='full')
+                    pivot = datetime.strptime(myData['publishedAt'], '%Y-%m-%dT%H:%M:%SZ') if len(myData['publishedAt']) == 20 else datetime.strptime(myData['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
+                    ticker = ""
+                    for item, value in myData.iteritems():
+                        if "tag_" in item:
+                            if value:
+                                if type(value) == unicode:
+                                    value = ast.literal_eval(value)
+                                if value.get('stockSymbol') != "" and value.get('stockSymbol') and value.get('stockSymbol') in tickers:
+                                    ticker = value['stockSymbol']
+                    
+                        elif "ticker" in item:
+                            ticker = value
+
+                    if ticker != "":
+                        if ticker == "BRKA":
+                            ticker = "BRK.A"
+                    if ticker and ticker != "":
+                        closest = min(stockTimes[ticker], key=lambda x: abs(x - pivot))
+                        if quarterly or (datetime.utcnow() - periodStart) > timedelta(weeks = 1):
+                            key = closest.strftime("%Y-%m-%d")
+                        else:
+                            key = closest.strftime("%Y-%m-%d %H:%M:%S")
+                        
+                        stockPrice = stockPrices[ticker][0][key]['1. open']
+                        
+                        #if type(obj['sentiment']) == unicode:
+                        #    obj['sentiment'] = ast.literal_eval(obj['sentiment'])
+
+                        if str(obj['newSentiment']) == "pos":
+                            sentiment = "pos"
+                            print(buyStock(ticker, float(stockPrice), 5))
+                        else:
+                            sentiment = "neg"
+                            print(sellStock(ticker, float(stockPrice), 5))
+                    
                     db.myCollection.insert(myData)
                 
     firstRun = False
@@ -934,7 +970,7 @@ def getTotal():
     invested = sum([shares * float(value['2. price']) for value, shares in zip(core[0], shares)])
 
     total = available + invested
-    return jsonify("$" + str(total))
+    return jsonify("$" + str(round(total, 2)))
 
 @app.route('/json/totalall')
 def getAllTotal():
@@ -956,6 +992,8 @@ def getAllTotal():
         temp['id'] = counter
         counter += 1
         output.append(temp)
+
+    output.sort(key=operator.itemgetter('totalShares'), reverse=True)
     return jsonify(output)
 
 @app.route('/json/<command>/<ticker>/<float:price>/<int:shares>')

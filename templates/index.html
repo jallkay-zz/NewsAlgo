@@ -40,7 +40,7 @@
 	</div>
 	<p style="color: darkred;font-size: 12px;">ALPHA</p>
     <div class="row">
-		<div class="total-funds"><div class="funds-figure">£10,000</div> </div>
+		<div class="total-funds"><div class="funds-figure">$25,000.00</div> </div>
     </div>
 		<section class="demo">
 			<div class="gridster">
@@ -81,7 +81,7 @@
                                                                                 </li>
 					<li data-row="1" data-col="3" data-sizex="2" data-sizey="3"><div class="draggable">
 																					<subtitle>Detail</subtitle>
-																					<div class="widget-menu">
+																					<!-- <div class="widget-menu">
 																						<div class="clear-menu-btn">
 																							<input type="checkbox" onchange="changeoptions(this)">
 																							<span class="top"></span>
@@ -89,8 +89,10 @@
 																							<span class="bottom"></span>
 																							<span class="circle"></span>
 																						</div><hr style="margin-bottom: 0px;">
-																					</div>
+																					</div> -->
+
 																				</div>
+																				<hr style="margin-bottom: 0px;">
 																				<div class="detail">
 																					<div id="title"></div>
 																					<div id="ref_img"></div>
@@ -108,7 +110,7 @@
 																						<div id="tracking-7d" class="tracking-filter-child" onclick="filterTracking(7)">1W</div>
 																						<div id="tracking-14d" class="tracking-filter-child" onclick="filterTracking(14)">2W</div>
 																					</div>
-																					<div class="widget-menu">
+																					<!-- <div class="widget-menu">
 																						<div class="clear-menu-btn">
 																							<input type="checkbox" onchange="changeoptions(this)">
 																							<span class="top"></span>
@@ -116,8 +118,9 @@
 																							<span class="bottom"></span>
 																							<span class="circle"></span>
 																						</div><hr style="margin-bottom: 0px;">
-																					</div>
+																					</div> -->
 																				</div>
+																				<hr style="margin-bottom: 0px;">
 																				<canvas id="myChart" height="330" width="600"></canvas>
 																				</li>
 					
@@ -127,7 +130,7 @@
 																						<i class="fas fa-2x fa-search" onclick="toggleFilterPositionRow()"></i>
 																						<input type="search" class="positionSearch" placeholder="Search.." id="txtPositionSearch2">
 																					</div>
-																					<div class="widget-menu">
+																					<!-- <div class="widget-menu">
 																						<div class="clear-menu-btn">
 																							<input type="checkbox" onchange="changeoptions(this)">
 																							<span class="top"></span>
@@ -135,7 +138,8 @@
 																							<span class="bottom"></span>
 																							<span class="circle"></span>
 																						</div><hr style="margin-bottom: 0px;">
-																					</div>
+																					</div> -->
+																					<hr style="margin-bottom: 0px;">
 																					<div id="myPositionGrid" style="height:151px;width:auto;"></div>
 																					<div id="positionPager" style="width:auto;height:20px;"></div>
 																				</div>
@@ -168,16 +172,17 @@
 																				</li>
 					<li data-row="10" data-col="1" data-sizex="3" data-sizey="1"><div class="draggable">
 																					<subtitle>Messages</subtitle>
-																					<div class="widget-menu">
+																					<!-- <div class="widget-menu">
 																						<div class="clear-menu-btn">
 																							<input type="checkbox" onchange="changeoptions(this)">
 																							<span class="top"></span>
 																							<span class="middle"></span>
 																							<span class="bottom"></span>
 																							<span class="circle"></span>
-																						</div><hr style="margin-bottom: 0px;">
-																						<div class="message-feed"></div>
-																					</div>
+																						</div>
+																					</div> -->
+																					<hr style="margin-bottom: 0px;">
+																					<div class="message-feed"></div>
 																				</div>
 																				</li>
 				</ul>
@@ -241,9 +246,9 @@
 				{id: "issuerName", name: "Issuer Name", field: "issuerName", width: 100, editor: Slick.Editors.Text, sortable:true},
 				{id: "ticker", name: "Ticker", field: "ticker", width: 70, editor: Slick.Editors.Text, sortable:true},
 				{id: "totalShares", name: "Shares", field: "totalShares", width: 60, editor: Slick.Editors.IntegerEditor, sortable:true},
-				{id: "totalValue", name: "Total Share Value", field: "totalValue", width: 130, editor: Slick.Editors.Text, sortable:true},
-				{id: "availableFunds", name: "Available Funds", field: "availableFunds", width: 120, editor: Slick.Editors.Text, sortable:true},
-				{id: "total", name: "Total", field: "total", width: 132, editor: Slick.Editors.Text, sortable:true},
+				{id: "totalValue", name: "Total Share Value", field: "totalValue", width: 130, formatter: Slick.Formatters.Currency, editor: Slick.Editors.Text, sortable:true},
+				{id: "availableFunds", name: "Available Funds", field: "availableFunds", width: 120, formatter: Slick.Formatters.Currency, editor: Slick.Editors.Text, sortable:true},
+				{id: "total", name: "Total", field: "total", width: 132, formatter: Slick.Formatters.Currency, editor: Slick.Editors.Text, sortable:true},
 			];
 			var options = {
 				enableCellNavigation: true,
@@ -275,6 +280,16 @@
 											&&  item["tag_2"]["stockSymbol"].toLowerCase().indexOf(args.searchString) == -1 &&  item["tag_3"]["stockSymbol"].toLowerCase().indexOf(args.searchString) == -1
 											&&  item["tag_4"]["stockSymbol"].toLowerCase().indexOf(args.searchString) == -1 &&  item["tag_5"]["stockSymbol"].toLowerCase().indexOf(args.searchString) == -1
 											&&  item["tag_6"]["stockSymbol"].toLowerCase().indexOf(args.searchString) == -1 &&  item["tag_7"]["stockSymbol"].toLowerCase().indexOf(args.searchString) == -1)                                         
+				{
+				return false;
+				}
+				return true;
+			}
+			function myPositionFilter(item, args) {
+				if (item["percentComplete"] < args.percentCompleteThreshold) {
+					return false;
+				}
+				if (args.searchString != "" &&  item["ticker"].toLowerCase().indexOf(args.searchString) == -1 && item["issuerName"].toLowerCase().indexOf(args.searchString) == -1)                                         
 				{
 				return false;
 				}
@@ -470,6 +485,7 @@
 					}
 				});
 			}
+			
 			
 
 			
@@ -853,7 +869,7 @@
 						});
 
 						// wire up the search textbox to apply the filter to the model
-						$("#txtPositionSearch,#txtPositonSearch2").keyup(function (e) {
+						$("#txtPositionSearch,#txtPositionSearch2").keyup(function (e) {
 							Slick.GlobalEditorLock.cancelCurrentEdit();
 							// clear on Esc
 							if (e.which == 27) {
@@ -887,13 +903,18 @@
 							percentCompleteThreshold: percentCompleteThreshold,
 							searchString: searchString
 						});
-						positionDataView.setFilter(myFilter);
+						positionDataView.setFilter(myPositionFilter);
 						positionDataView.endUpdate();
 						//if you don't want the items that are not visible (due to being filtered out
 						//or being on a different page) to stay selected, pass 'false' to the second arg
 						positionDataView.syncGridSelection(positionGrid, true);
+					},
+					complete: function() {
+						setTimeout(getPosition, 60000)
 					}
 				});
+
+				
 			}
 			
 			function changeoptions(obj) {

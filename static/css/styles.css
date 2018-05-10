@@ -702,7 +702,7 @@ input[type="checkbox"].options:checked {
   display: inline-block;
 }
 
-input#txtSearch2 {
+input#txtSearch2, input#txtPositionSearch2 {
   position: relative;
   transition: all 0.5s ease;
   top: -2px;
@@ -715,7 +715,7 @@ input#txtSearch2 {
   opacity: 0.5;
 }
 
-.search:focus {
+.search:focus, .positionSearch:focus {
   width: 200px!important;
 }
 
