@@ -948,11 +948,11 @@ def getAllTotal():
     for myobj, inv in zip(dbItems, invested):
         temp = {}
         temp['ticker'] = myobj['ticker']
-        #temp['issuerName'] = getCompanyName(myobj['ticker'])
-        #temp['totalShares'] = myobj['shares']
-        #temp['totalValue'] = inv
-        #temp['availableFunds'] = myobj['funds']
-        #temp['total'] = myobj['funds'] + inv
+        temp['issuerName'] = getCompanyName(myobj['ticker'])
+        temp['totalShares'] = myobj['shares']
+        temp['totalValue'] = inv
+        temp['availableFunds'] = myobj['funds']
+        temp['total'] = myobj['funds'] + inv
         temp['id'] = counter
         counter += 1
         output.append(temp)
