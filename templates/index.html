@@ -123,6 +123,10 @@
 					
 					<li data-row="9" data-col="1" data-sizex="3" data-sizey="1"><div class="draggable">
 																					<subtitle>Position</subtitle>
+																					<div class="searchbox">
+																						<i class="fas fa-2x fa-search" onclick="toggleFilterPositionRow()"></i>
+																						<input type="search" class="positionSearch" placeholder="Search.." id="txtPositionSearch2">
+																					</div>
 																					<div class="widget-menu">
 																						<div class="clear-menu-btn">
 																							<input type="checkbox" onchange="changeoptions(this)">
@@ -132,6 +136,8 @@
 																							<span class="circle"></span>
 																						</div><hr style="margin-bottom: 0px;">
 																					</div>
+																					<div id="myPositionGrid" style="height:571px;width:auto;"></div>
+																					<div id="positionPager" style="width:auto;height:20px;"></div>
 																				</div>
 																				</li>
 					<li data-row="4" data-col="1" data-sizex="3" data-sizey="3"><div class="draggable">
@@ -213,12 +219,15 @@
                     width: "auto"
 				}).data('gridster');
 				getHeadlines();
+				getPosition();
 			});
 
 		</script>
 		<script>
 			var grid;
+			var positionGrid;
 			var dataView;
+			var positionDataView
 			var indexNumber;
 			var data = [];
 			var columns = [
@@ -227,6 +236,14 @@
 				{id: "updatedShort", name: "Updated", field: "updatedShort", width: 70, editor: Slick.Editors.Text, sortable:true},
 				{id: "title", name: "Headline", field: "title", width: 230, editor: Slick.Editors.Text, sortable:true},
 				
+			];
+			var positionColumns = [
+				{id: "issuerName", name: "Issuer Name", field: "issuerName", width: 200, editor: Slick.Editors.Text, sortable:true},
+				{id: "ticker", name: "Ticker", field: "ticker", width: 120, editor: Slick.Editors.Text, sortable:true},
+				{id: "totalShares", name: "Shares", field: "totalShares", width: 120, editor: Slick.Editors.IntegerEditor, sortable:true},
+				{id: "totalValue", name: "Total Share Value", field: "totalValue", width: 150, editor: Slick.Editors.Text, sortable:true},
+				{id: "availableFunds", name: "Available Funds", field: "availableFunds", width: 150, editor: Slick.Editors.Text, sortable:true},
+				{id: "total", name: "Total", field: "total", width: 150, editor: Slick.Editors.Text, sortable:true},
 			];
 			var options = {
 				enableCellNavigation: true,
@@ -272,6 +289,9 @@
 			}
 			function toggleFilterRow() {
 				$('.search').css({"display" : "inline-block", "width" : "100px"});
+			}
+			function toggleFilterPositionRow() {
+				$('.positionSearch').css({"display" : "inline-block", "width" : "100px"});
 			}
 			$(".grid-header .ui-icon")
 				.addClass("ui-state-default ui-corner-all")
@@ -738,6 +758,142 @@
 					}
 				}
 
+			}
+
+			function getPosition() {
+				var myurl = 'json/totalall';
+				
+				$.ajax({
+					type: "GET",
+					url:  myurl,
+					dataType: 'json',
+					success: function (data) {
+						positionDataView = new Slick.Data.DataView();
+						positionGrid = new Slick.Grid("#myPositionGrid", positionDataView, positionColumns, options);
+						positionGrid.setSelectionModel(new Slick.CellSelectionModel());
+
+						$("#inlineFilterPanel")
+							.appendTo(positionGrid.getTopPanel())
+							.show();
+						
+						positionGrid.onCellChange.subscribe(function (e, args) {
+							positionDataView.updateItem(args.item.id, args.item);
+						});
+						positionGrid.onAddNewRow.subscribe(function (e, args) {
+							var item = {"num": data.length, "id": "new_" + (Math.round(Math.random() * 10000)), "title": "New task", "duration": "1 day", "percentComplete": 0, "start": "01/01/2009", "finish": "01/01/2009", "effortDriven": false};
+							$.extend(item, args.item);
+							positionDataView.addItem(item);
+						});
+						positionGrid.onKeyDown.subscribe(function (e) {
+							// select all rows on ctrl-a
+							if (e.which != 65 || !e.ctrlKey) {
+							return false;
+							}
+							var rows = [];
+							for (var i = 0; i < positionDataView.getLength(); i++) {
+							rows.push(i);
+							}
+							positionGrid.setSelectedRows(rows);
+							e.preventDefault();
+						});
+						positionGrid.onSort.subscribe(function (e, args) {
+							sortdir = args.sortAsc ? 1 : -1;
+							sortcol = args.sortCol.field;
+							if ($.browser.msie && $.browser.version <= 8) {
+							// using temporary Object.prototype.toString override
+							// more limited and does lexicographic sort only by default, but can be much faster
+							var percentCompleteValueFn = function () {
+								var val = this["percentComplete"];
+								if (val < 10) {
+								return "00" + val;
+								} else if (val < 100) {
+								return "0" + val;
+								} else {
+								return val;
+								}
+							};
+							// use numeric sort of % and lexicographic for everything else
+							positionDataView.fastSort((sortcol == "percentComplete") ? percentCompleteValueFn : sortcol, args.sortAsc);
+							} else {
+							// using native sort with comparer
+							// preferred method but can be very slow in IE with huge datasets
+							positionDataView.sort(comparer, args.sortAsc);
+							}
+						});
+						// wire up model events to drive the positionGrid
+						positionDataView.onRowCountChanged.subscribe(function (e, args) {
+							positionGrid.updateRowCount();
+							positionGrid.render();
+						});
+						positionDataView.onRowsChanged.subscribe(function (e, args) {
+							positionGrid.invalidateRows(args.rows);
+							positionGrid.render();
+						});
+						positionDataView.onPagingInfoChanged.subscribe(function (e, pagingInfo) {
+							var isLastPage = pagingInfo.pageNum == pagingInfo.totalPages - 1;
+							var enableAddRow = isLastPage || pagingInfo.pageSize == 0;
+							var options = positionGrid.getOptions();
+							if (options.enableAddRow != enableAddRow) {
+							positionGrid.setOptions({enableAddRow: enableAddRow});
+							}
+						});
+
+						var h_runfilters = null;
+						// wire up the slider to apply the filter to the model
+						$("#pcSlider,#pcSlider2").slider({
+							"range": "min",
+							"slide": function (event, ui) {
+							Slick.GlobalEditorLock.cancelCurrentEdit();
+							if (percentCompleteThreshold != ui.value) {
+								window.clearTimeout(h_runfilters);
+								h_runfilters = window.setTimeout(updateFilter, 10);
+								percentCompleteThreshold = ui.value;
+							}
+							}
+						});
+
+						// wire up the search textbox to apply the filter to the model
+						$("#txtPositionSearch,#txtPositonSearch2").keyup(function (e) {
+							Slick.GlobalEditorLock.cancelCurrentEdit();
+							// clear on Esc
+							if (e.which == 27) {
+							this.value = "";
+							}
+							searchString = this.value.toLowerCase();
+							updateFilter();
+						});
+						function updateFilter() {
+							positionDataView.setFilterArgs({
+							percentCompleteThreshold: percentCompleteThreshold,
+							searchString: searchString
+							});
+							positionDataView.refresh();
+						}
+						$("#btnSelectRows").click(function () {
+							if (!Slick.GlobalEditorLock.commitCurrentEdit()) {
+							return;
+							}
+							var rows = [];
+							for (var i = 0; i < 10 && i < positionDataView.getLength(); i++) {
+							rows.push(i);
+							}
+							positionGrid.setSelectedRows(rows);
+						});
+
+						//initialize the model after all the events have been hooked up
+						positionDataView.beginUpdate();
+						positionDataView.setItems(data);
+						positionDataView.setFilterArgs({
+							percentCompleteThreshold: percentCompleteThreshold,
+							searchString: searchString
+						});
+						positionDataView.setFilter(myFilter);
+						positionDataView.endUpdate();
+						//if you don't want the items that are not visible (due to being filtered out
+						//or being on a different page) to stay selected, pass 'false' to the second arg
+						positionDataView.syncGridSelection(positionGrid, true);
+					}
+				});
 			}
 			
 			function changeoptions(obj) {

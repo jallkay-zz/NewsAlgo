@@ -938,14 +938,24 @@ def getTotal():
 
 @app.route('/json/totalall')
 def getAllTotal():
-    output = {}
+    output = []
     dbItems = list(db.stocks.find({}))
     shares = [obj['shares'] for obj in dbItems]
     tickers = [obj['ticker'] for obj in dbItems]
     core = ts.get_batch_stock_quotes(tickers)
     invested = [share * float(value['2. price']) for value, share in zip(core[0], shares)]
-    for name, i in zip(tickers, invested):
-        output[name] = i 
+    counter = 0
+    for myobj, inv in zip(dbItems, invested):
+        temp = {}
+        temp['ticker'] = myobj['ticker']
+        #temp['issuerName'] = getCompanyName(myobj['ticker'])
+        #temp['totalShares'] = myobj['shares']
+        #temp['totalValue'] = inv
+        #temp['availableFunds'] = myobj['funds']
+        #temp['total'] = myobj['funds'] + inv
+        temp['id'] = counter
+        counter += 1
+        output.append(temp)
     return jsonify(output)
 
 @app.route('/json/<command>/<ticker>/<float:price>/<int:shares>')
