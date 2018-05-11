@@ -573,14 +573,16 @@ def getNews(firstRun = False):
                         
                         stockPrice = stockPrices[0][key]['1. open']
                         
-                        #if type(obj['sentiment']) == unicode:
-                        #    obj['sentiment'] = ast.literal_eval(obj['sentiment'])
-
-                        if str(myData['newSentiment']) == "pos":
+                        if type(obj['sentiment']) == unicode:
+                                 obj['sentiment'] = ast.literal_eval(obj['sentiment'])
+                        if obj['sentiment']['pos'] > obj['sentiment']['neg']:
                             sentiment = "pos"
-                            print(buyStock(ticker, float(stockPrice), 5))
                         else:
                             sentiment = "neg"
+
+                        if sentiment == "pos":
+                            print(buyStock(ticker, float(stockPrice), 5))
+                        else:
                             print(sellStock(ticker, float(stockPrice), 5))
                     
                     db.myCollection.insert(myData)
