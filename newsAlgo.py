@@ -573,9 +573,9 @@ def getNews(firstRun = False):
                         
                         stockPrice = stockPrices[0][key]['1. open']
                         
-                        if type(obj['sentiment']) == unicode:
-                                 obj['sentiment'] = ast.literal_eval(obj['sentiment'])
-                        if obj['sentiment']['pos'] > obj['sentiment']['neg']:
+                        if type(myData['sentiment']) == unicode:
+                                 myData['sentiment'] = ast.literal_eval(myData['sentiment'])
+                        if myData['sentiment']['pos'] > myData['sentiment']['neg']:
                             sentiment = "pos"
                         else:
                             sentiment = "neg"
