@@ -38,7 +38,7 @@ redirects['trumps'] = 'trump'
 
 stockSymbols = {}
 
-initFunds = 25000.00
+initFunds = 500000.00
 
 currentMessage = []
 classifier = {}
@@ -65,10 +65,17 @@ def splitTickerFunds():
             stocks['shares'] = 0
             db.stocks.insert(stocks)
     
-def buyStock(ticker, price, shares):
+def buyStock(ticker, price, shares, sentiment=0):
     obj = db.stocks.find({ "ticker" : ticker })[0]
-    availableFunds = obj['funds']
-    requestedFunds = price * shares
+    shortSellValue = (obj['short'] * obj['shares']) + ((obj['short'] * obj['shares']) + (abs(obj['shares']) * price)) if obj['shares'] < 0 else 0
+    availableFunds = obj['funds'] + shortSellValue
+    if sentiment:
+        maximum = int(floor(obj['funds'] / price))
+        shares = int(floor(maximum * sentiment))
+    if shortSellValue < 0:
+        requestedFunds = (obj['short'] * obj['shares']) + ((obj['short'] * obj['shares']) + (abs(obj['shares']) * price)) 
+    else:
+        requestedFunds = price * shares
     if requestedFunds < availableFunds:
         obj['funds'] -= requestedFunds
         obj['shares'] += shares
@@ -79,10 +86,13 @@ def buyStock(ticker, price, shares):
         return "NOT BOUGHT %f of %s at %f, insufficient funds. amount available %f" % (shares, ticker, price, obj['funds'])
 
     
-def sellStock(ticker, price, shares):
+def sellStock(ticker, price, shares, sentiment=0.0):
     obj = db.stocks.find({ "ticker" : ticker })[0]
     availableFunds = obj['funds']
     investedShares  = obj['shares']
+    if sentiment:
+        maximum = int(floor(obj['funds'] / price))
+        shares = int(floor(maximum * sentiment))
     requestedFunds = price * shares
     if investedShares >= shares:
         obj['funds'] += requestedFunds
@@ -91,7 +101,15 @@ def sellStock(ticker, price, shares):
         currentMessage.append("SOLD %f of %s at %f amount available %f" % (shares, ticker, price, obj['funds']))
         return "SOLD %f of %s at %f amount available %f" % (shares, ticker, price, obj['funds'])
     else:
-        return "NOT SOLD %f of %s at %f amount available %f, invested shares %i" % (shares, ticker, price, obj['funds'], obj['shares'])
+        if requestedFunds < availableFunds:
+            obj['funds'] -= requestedFunds
+            obj['shares'] -= shares
+            obj['short'] = price
+            db.stocks.update( { "_id" : obj['_id'] } , { "$set" : obj})
+            currentMessage.append("SHORT SELLING  %f of %s at %f amount available %f, invested shares %i" % (shares, ticker, price, obj['funds'], obj['shares']))
+            return "SHORT SOLD %f of %s at %f amount available %f, invested shares %i" % (shares, ticker, price, obj['funds'], obj['shares'])
+        else:
+            return "NOT SOLD %f of %s at %f amount available %f, invested shares %i" % (shares, ticker, price, obj['funds'], obj['shares'])
 
 def getStockSymbol(companyName):
     for name in stockSymbols.values:
@@ -581,9 +599,9 @@ def getNews(firstRun = False):
                             sentiment = "neg"
 
                         if sentiment == "pos":
-                            print(buyStock(ticker, float(stockPrice), 5))
+                            print(buyStock(ticker, float(stockPrice), 5, myData['sentiment']['pos']))
                         else:
-                            print(sellStock(ticker, float(stockPrice), 5))
+                            print(sellStock(ticker, float(stockPrice), 5, myData['sentiment']['neg']))
                     
                     db.myCollection.insert(myData)
                 
@@ -981,7 +999,16 @@ def getAllTotal():
     shares = [obj['shares'] for obj in dbItems]
     tickers = [obj['ticker'] for obj in dbItems]
     core = ts.get_batch_stock_quotes(tickers)
-    invested = [share * float(value['2. price']) for value, share in zip(core[0], shares)]
+    #invested = [share * float(value['2. price']) for value, share in zip(core[0], shares)]
+    invested = []
+    for value, obj in zip(core[0], dbItems):
+        if obj['shares'] < 0:
+            boughtValue = abs(obj['shares'] * obj['short'])
+            currentValue = obj['shares'] * float(value['2. price'])
+            finalValue = boughtValue + (boughtValue - currentValue)
+            invested.append(finalValue)
+        else:
+            invested.append(obj['shares'] * float(value['2. price']))
     counter = 0
     for myobj, inv in zip(dbItems, invested):
         temp = {}
@@ -1172,8 +1199,8 @@ if __name__ == "__main__":
     stockSymbols = pandas.DataFrame.from_csv('shortListedStocks.csv', header=0)
     client = pymongo.MongoClient(uri)
     db = client.get_default_database()
-    trainNewsSentiment(firstTime = True)
-    getNews(firstRun = True)
+    trainNewsSentiment(firstTime = False)
+    getNews(firstRun = False)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
     
