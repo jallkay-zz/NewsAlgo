@@ -742,7 +742,7 @@ def getAnalysis(newsArticle):
         #                         finished = True
 
         if finished:
-            wikiReturn = { currentWord : 'Test' }
+            wikiReturn = { currentWord : '' }
             currentWord = ''
             finished = False
             override = False
