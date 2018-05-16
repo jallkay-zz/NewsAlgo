@@ -67,13 +67,13 @@ def splitTickerFunds():
     
 def buyStock(ticker, price, shares, sentiment=0):
     obj = db.stocks.find({ "ticker" : ticker })[0]
-    shortSellValue = (obj['short'] * obj['shares']) + ((obj['short'] * obj['shares']) + (abs(obj['shares']) * price)) if obj['shares'] < 0 else 0
+    shortSellValue = (obj['short'] * shares) + ((o0bj['short'] * shares) + (abs(shares) * price)) if obj['shares'] < 0 else 0
     availableFunds = obj['funds'] + shortSellValue
     if sentiment:
         maximum = int(floor(obj['funds'] / price))
         shares = int(floor(maximum * sentiment))
     if shortSellValue < 0:
-        requestedFunds = (obj['short'] * obj['shares']) + ((obj['short'] * obj['shares']) + (abs(obj['shares']) * price)) 
+        requestedFunds = ((obj['short'] * shares) + ((obj['short'] * shares) + (abs(shares) * price))) * -1 
     else:
         requestedFunds = price * shares
     if requestedFunds < availableFunds:
@@ -159,7 +159,10 @@ def sellAllStock(date=None):
             closest = min(stockTimes[tic[0]], key=lambda x: abs(x - pivot))
             key = closest.strftime("%Y-%m-%d")
             price = stockPrices[tic[0]][0][key]['1. open']
-            myreturn = sellStock(tic[0], float(price), tic[1])
+            if tic[1] < 0:
+                myreturn = buyStock(tic[0], float(price), abs(tic[1]))
+            else:
+                myreturn = sellStock(tic[0], float(price), tic[1])
             print myreturn
 
 def updateNewsObject(obj):
@@ -1199,8 +1202,8 @@ if __name__ == "__main__":
     stockSymbols = pandas.DataFrame.from_csv('shortListedStocks.csv', header=0)
     client = pymongo.MongoClient(uri)
     db = client.get_default_database()
-    trainNewsSentiment(firstTime = False)
-    getNews(firstRun = False)
+    trainNewsSentiment(firstTime = True)
+    getNews(firstRun = True)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
     
