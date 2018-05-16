@@ -604,7 +604,7 @@
 							else {
 								output += '<button class="focus" class="tag_' + i + '" onclick=tagClicked(".d_tag_' + i + '-' + data['tag_' + i ]['stockSymbol'] + '")><p>' + tags[i] + '</p></button>';
 							}
-							descOutput += "<div class='d_tag_" + i + "'><p>" + data['tag_' + i]['desc'] + "</p></div>";
+							descOutput += "<div class='d_tag_" + i + "></p></div>";
 						}
 						sentOutput += "<div id='overrideSentiment' class='override'><button class='override' id='overridePos' onclick=changeSentiment('" + indexNumber + "','pos')>Positive</button>";
 						sentOutput += "<button class='override' id='overrideNeg' onclick=changeSentiment('" + indexNumber + "','neg')>Negative</button></div>";
